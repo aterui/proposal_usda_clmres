@@ -11,7 +11,9 @@ pacman::p_load(runjags,
 list_df <- readRDS("output/df_sim.rds")
 
 df0 <- list_df[[1]] %>% 
-  filter(group == 1)
+  mutate(group_id = paste0("g", group),
+         site_id = paste0(group, "_", site),
+         site_num = as.numeric(factor(site_id)))
 
 
 # jags setup --------------------------------------------------------------
@@ -42,31 +44,37 @@ for (j in 1:n_chain) inits[[j]]$.RNG.seed <- (j - 1) * 10 + 1
 
 # jags --------------------------------------------------------------------
 
-d_jags <- list(Site = df0$site,
+d_jags <- list(Site = df0$site_num,
                Species = df0$species,
                Y = df0$occupancy,
+               Group = df0$group,
                Nsample = nrow(df0),
                Nspecies = n_distinct(df0$species),
-               Nsite = n_distinct(df0$site))
+               Nsite = n_distinct(df0$site_num),
+               Ng = n_distinct(df0$group))
 
 ## run jags ####
-post <- runjags::run.jags(m$model,
-                          monitor = para,
-                          data = d_jags,
-                          n.chains = n_chain,
-                          inits = inits,
-                          method = "parallel",
-                          burnin = n_burn,
-                          sample = n_sample,
-                          adapt = n_ad,
-                          thin = n_thin,
-                          n.sims = n_chain,
-                          module = "glm")
-
-mcmc_summary <- MCMCvis::MCMCsummary(post$mcmc)
+# post <- runjags::run.jags(m$model,
+#                           monitor = para,
+#                           data = d_jags,
+#                           n.chains = n_chain,
+#                           inits = inits,
+#                           method = "parallel",
+#                           burnin = n_burn,
+#                           sample = n_sample,
+#                           adapt = n_ad,
+#                           thin = n_thin,
+#                           n.sims = n_chain,
+#                           module = "glm")
+# 
+# saveRDS(post,
+#         file = "output/post_mrf.rds")
 
 
 # validation --------------------------------------------------------------
+
+post <- readRDS("output/post_mrf.rds")
+mcmc_summary <- MCMCvis::MCMCsummary(post$mcmc)
 
 df_est <- mcmc_summary %>% 
   as_tibble(rownames = "param") %>% 
@@ -80,29 +88,43 @@ df_est <- mcmc_summary %>%
 
 df_beta0 <- df_est %>% 
   filter(param_id == "beta0") %>% 
-  mutate(true = distinct(df0, alpha0) %>% pull(alpha0))
+  mutate(x = str_extract(param, "\\d{1,},\\d{1,}")) %>% 
+  separate(x,
+           into = c("group", "species"),
+           convert = T) %>% 
+  left_join(df0 %>% select(alpha0, group, species),
+            by = c("group", "species")) %>% 
+  rename(true = alpha0)
 
 df_beta <- df_est %>% 
   filter(param_id == "beta") %>% 
   mutate(true = c(list_df[[2]]))
 
-df_plot <- bind_rows(df_beta0, df_beta)
+df_plot <- bind_rows(df_beta0, df_beta) %>% 
+  mutate(label = case_when(param_id == "beta" ~ "Species~association~gamma[ij]",
+                           param_id == "beta0" ~ "Intercept~beta[0]"))
   
   
 # visualize ---------------------------------------------------------------
 
-ggplot(df_plot) +
+g_sim <- ggplot(df_plot) +
   geom_abline(intercept = 0,
               slope = 1,
               color = grey(0.75)) +
-  geom_segment(aes(x = true,
-                   xend = true,
-                   y = low,
-                   yend = high),
-               alpha = 0.1) +
   geom_point(aes(x = true,
-                 y = median),
-             alpha = 0.5) +
-  facet_wrap(facets = ~param_id,
-             scales = "free") +
-  theme_bw()
+                 y = median,
+                 color = factor(species)),
+             alpha = 0.2) +
+  facet_wrap(facets = ~ label,
+             scales = "free",
+             labeller = label_parsed) +
+  guides(color = "none") +
+  labs(x = "True value",
+       y = "Estimate") +
+  theme_bw() +
+  theme(strip.background = element_blank())
+
+ggsave(g_sim,
+       file = "output/fig_sim.pdf",
+       width = 8,
+       height = 4)

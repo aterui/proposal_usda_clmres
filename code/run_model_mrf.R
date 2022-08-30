@@ -103,5 +103,6 @@ ggplot(df_plot) +
   geom_point(aes(x = true,
                  y = median),
              alpha = 0.5) +
-  facet_wrap(facets = ~param_id) +
+  facet_wrap(facets = ~param_id,
+             scales = "free") +
   theme_bw()

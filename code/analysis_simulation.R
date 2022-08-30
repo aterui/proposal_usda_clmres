@@ -11,13 +11,12 @@ source(here::here("code/function_simulator.R"))
 
 # simulated data ----------------------------------------------------------
 
-n_step <- 500
-n_species <- 20
+n_step <- 100
+n_species <- 10
 n_site <- 100
 n_group <- 10
-phi <- 1
+phi <- 0.5
 
-set.seed(156)
 m_alpha <- rnorm(n_species * n_species,
                  mean = 0,
                  sd = 1) * rbinom(n_species * n_species, 1, phi) %>% 
@@ -47,3 +46,6 @@ df_sim <- foreach(i = seq_len(n_group),
 
 # export
 saveRDS(list(df_sim, m_alpha), file = "output/df_sim.rds")
+
+
+

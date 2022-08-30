@@ -22,16 +22,16 @@ f_gibbs <- function(n_step = 100,
     
     m_alpha[upper.tri(m_alpha)] <- 0
     m_alpha <- m_alpha + t(m_alpha)
+    diag(m_alpha) <- 0
   } else {
     m_alpha <- alpha
   }
   
-  
-  v_alpha0 <- boot::logit(runif(n_species))
+  v_alpha0 <- boot::logit(runif(n_species, 0.1, 0.8))
   
   m_y <- rbinom(n_site * n_species,
                 1,
-                rep(0.5, n_site * n_species)) %>% 
+                boot::inv.logit(rep(v_alpha0, each = n_site))) %>% 
     matrix(nrow = n_site, ncol = n_species)
   
   
@@ -45,15 +45,15 @@ f_gibbs <- function(n_step = 100,
                } %>% 
     data.matrix()
   
+  m_p <- matrix(NA, nrow = n_site, ncol = n_species)
+  
   for (i in 1:n_step) {
-    
-    m_p <- t(boot::inv.logit(v_alpha0 + t(m_y %*% m_alpha)))
-    m_y <- rbinom(n_site * n_species, 1, c(m_p)) %>% 
-      matrix(nrow = n_site, ncol = n_species)
-    
+    for (j in 1:n_species) {
+      m_p[, j] <- boot::inv.logit(v_alpha0[j] + m_y %*% m_alpha[, j])
+      m_y[, j] <- rbinom(n_site, 1, m_p[, j])
+    }
     Y[row_id[i]:(row_id[i + 1] - 1), "occupancy"] <- c(m_y)  
     Y[row_id[i]:(row_id[i + 1] - 1), "step"] <- i
-    
   }
   
   if (n_burn > 0) {

@@ -26,7 +26,7 @@ model {
     for (j in (i + 1):Nspecies) {
       ## symmetric assumption
       b[i, j] ~ dnorm(0, tau_b[i, j])
-      tau_b[i, j] <- z[i, j] * 1 + (1 - z[i, j]) * 100
+      tau_b[i, j] <- z[i, j] * tau0 + (1 - z[i, j]) * 100
       z[i, j] ~ dbern(phi)
       
       beta[i, j] <- b[i, j]

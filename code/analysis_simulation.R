@@ -12,9 +12,9 @@ source(here::here("code/function_simulator.R"))
 # simulated data ----------------------------------------------------------
 
 n_step <- 100
-n_species <- 10
-n_site <- 100
-n_group <- 10
+n_species <- 20
+n_site <- 10
+n_group <- 20
 phi <- 0.5
 
 m_alpha <- rnorm(n_species * n_species,

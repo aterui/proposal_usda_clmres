@@ -49,6 +49,14 @@ comp <- wgs84_sf_str %>%
 wgs84_sf_str <- wgs84_sf_str %>% 
   mutate(group = comp$membership) %>% 
   filter(group == which.max(comp$csize))
+
+albers_sf_str_buff <- wgs84_sf_str %>% 
+  st_transform(5070) %>% 
+  st_buffer(dist = 500) %>% 
+  st_union() %>% 
+  st_as_sf() %>% 
+  st_transform(5070) %>%
+  mutate(id = row_number())
   
 ### wgs84_sf_tp: vector point for TP sampling
 set.seed(123)
@@ -56,12 +64,23 @@ wgs84_sf_tp <- readRDS(here::here("data_raw/data_np.rds")) %>%
   filter(characteristic %in% c("Phosphorus", "Total Phosphorus, mixed forms")) %>% 
   arrange(date) %>% 
   dplyr::select(-c(activity_id, value_raw, value_raw_unit)) %>% 
+  mutate(unique_site = paste(round(lon, 3), round(lat, 3))) %>% 
+  group_by(unique_site) %>% 
+  slice(which.min(date)) %>% 
   st_as_sf(coords = c("lon", "lat"),
            crs = 4269) %>% 
-  st_transform(crs = 4326) %>% 
-  st_intersection(wgs84_sf_mask0) %>% 
-  sample_n(size = 50) %>% 
-  mutate(site_id = row_number())
+  st_transform(crs = 5070) %>% 
+  st_join(albers_sf_str_buff) %>% 
+  st_join(st_transform(wgs84_sf_mask0, crs = 5070)) %>% 
+  drop_na(starts_with("id.")) %>% 
+  dplyr::select(-starts_with("id.")) %>% 
+  sample_n(size = 200) %>% 
+  mutate(site_id = row_number()) %>% 
+  st_as_sf() %>% 
+  st_transform(4326)
+
+saveRDS(wgs84_sf_tp %>% as_tibble(),
+        here::here("data_fmt/data_tp_sub.rds"))
 
 # save to tempdir() -------------------------------------------------------
 
@@ -103,12 +122,8 @@ wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
 
 wgs84_sf_tp_snap <- st_read(dsn = v_name[str_detect(v_name, "outlet_snap")])
 
-st_write(wgs84_sf_tp,
-         dsn = here::here("data_raw/epsg4326_point.gpkg"),
-         append = FALSE)
-
 st_write(wgs84_sf_tp_snap,
-         dsn = here::here("data_raw/epsg4326_point_snap.gpkg"),
+         dsn = here::here("data_fmt/epsg4326_point_snap.gpkg"),
          append = FALSE)
 
 ## watershed delineation
@@ -140,7 +155,7 @@ wgs84_sf_wsd <- list.files(path = tempdir(),
   st_transform(crs = 4326)
 
 st_write(wgs84_sf_wsd,
-         dsn = here::here("data_raw/epsg4326_wsd.gpkg"),
+         dsn = here::here("data_fmt/epsg4326_wsd.gpkg"),
          append = FALSE)
 
 ## distance
@@ -153,7 +168,7 @@ wgs84_sfnetb %>%
   activate(edges) %>%
   as_tibble() %>%
   st_as_sf() %>%
-  st_write(here::here("data_raw/epsg4326_str_mrb.gpkg"),
+  st_write(here::here("data_fmt/epsg4326_str_mrb.gpkg"),
            append = FALSE)
 
 nodes <- wgs84_sfnetb %>%
@@ -193,9 +208,14 @@ z <- m2v(m_down) %>%
 
 df_dist <- purrr::reduce(list(x, y, z),
                          dplyr::left_join,
-                         by = c("from", "to"))
+                         by = c("from", "to")) %>% 
+  mutate(from = as.numeric(from),
+         to = as.numeric(to)) %>% 
+  mutate(across(.cols = c("distance", "up", "down"),
+                \(x) round(x, 2))) %>% 
+  arrange(up)
 
-saveRDS(df_dist, here::here("data_raw/data_distance.rds"))
+saveRDS(df_dist, here::here("data_fmt/data_distance.rds"))
 
 # mapping -----------------------------------------------------------------
 # 

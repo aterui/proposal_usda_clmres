@@ -7,4 +7,5 @@ pacman::p_load(tidyverse,
                tmap,
                tidygraph,
                igraph,
-               sfnetworks)
+               sfnetworks,
+               exactextractr)

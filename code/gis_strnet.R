@@ -13,7 +13,7 @@ root <- here::here() %>%
 
 ## read layers
 ### st_strg: grid stream layer
-wgs84_sr_strg <- terra::rast(paste0(root, "priv-proj_midwest-gis/data_gis/epsg4326_stream_grid_1sqkm.tif"))
+wgs84_sr_strg <- terra::rast("data_raw/epsg4326_stream_grid_50sqkm.tif")
 
 ### dir: flow direction
 wgs84_sr_dir <- terra::rast(paste0(root, "priv-proj_midwest-gis/data_gis/epsg4326_dir.tif")) %>% 
@@ -36,7 +36,8 @@ wgs84_sf_mask0 <- st_read(here::here("data_raw/epsg4269_huc4_mrb.gpkg")) %>%
   mutate(id = 1)
   
 ### sf_str: vector stream
-wgs84_sf_str <- st_read(dsn = paste0(root, "priv-proj_midwest-gis/data_gis/epsg4326_channel_1sqkm.shp")) %>% 
+wgs84_sf_str <- st_read(dsn = "data_raw/epsg4326_channel_50sqkm.shp") %>% 
+  st_set_crs(4326) %>% 
   st_join(wgs84_sf_mask) %>% 
   drop_na(id) %>% 
   dplyr::select(NULL)
@@ -64,7 +65,7 @@ wgs84_sf_tp <- readRDS(here::here("data_raw/data_np.rds")) %>%
   filter(characteristic %in% c("Phosphorus", "Total Phosphorus, mixed forms")) %>% 
   arrange(date) %>% 
   dplyr::select(-c(activity_id, value_raw, value_raw_unit)) %>% 
-  mutate(unique_site = paste(round(lon, 3), round(lat, 3))) %>% 
+  mutate(unique_site = paste(round(lon, 2), round(lat, 2))) %>% 
   group_by(unique_site) %>% 
   slice(which.min(date)) %>% 
   st_as_sf(coords = c("lon", "lat"),
@@ -105,6 +106,17 @@ terra::writeRaster(wgs84_sr_upa,
                    filename = v_name[str_detect(v_name, "upa")],
                    overwrite = TRUE)
 
+# wbt_extract_streams(flow_accum = v_name[str_detect(v_name, "upa")],
+#                     output = v_name[str_detect(v_name, "strg")],
+#                     threshold = 50)
+# 
+# x <- terra::rast(v_name[str_detect(v_name, "strg")])
+# terra::writeRaster(x, filename = here::here("data_raw/epsg4326_stream_grid_50sqkm.tif"))
+# 
+# wbt_raster_streams_to_vector(streams = v_name[str_detect(v_name, "strg")],
+#                              d8_pntr = v_name[str_detect(v_name, "dir")],
+#                              output = "data_raw/epsg4326_channel_50sqkm.shp")
+
 st_write(wgs84_sf_tp,
          dsn = v_name[str_detect(v_name, "outlet.shp")],
          append = FALSE)
@@ -121,6 +133,39 @@ wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
                             snap_dist = 2)
 
 wgs84_sf_tp_snap <- st_read(dsn = v_name[str_detect(v_name, "outlet_snap")])
+
+wgs84_sfnet <- as_sfnetwork(wgs84_sf_str, directed = FALSE)
+wgs84_sfnetb <- st_network_blend(wgs84_sfnet, wgs84_sf_tp_snap) %>%
+  activate(edges) %>%
+  mutate(w = units::set_units(edge_length(), "km")) %>% 
+  activate(nodes) %>% 
+  mutate(node_id = row_number(),
+         prefix = ifelse(is.na(site_id),
+                         "p_",
+                         "o_")) %>% 
+  group_by(prefix) %>% 
+  mutate(index = paste0(prefix, ifelse(is.na(site_id),
+                                       row_number(),
+                                       site_id))) %>% 
+  ungroup() %>% 
+  arrange(node_id)
+
+## network
+wgs84_sfnetb %>%
+  activate(edges) %>%
+  as_tibble() %>%
+  st_as_sf() %>%
+  st_write(here::here("data_fmt/epsg4326_str_mrb.gpkg"),
+           append = FALSE)
+
+wgs84_sf_tp_snap <- wgs84_sfnetb %>% 
+  activate(nodes) %>% 
+  as_tibble() %>% 
+  mutate(node_id = row_number())
+
+st_write(wgs84_sf_tp_snap,
+         dsn = v_name[str_detect(v_name, "outlet_snap")],
+         append = FALSE)
 
 st_write(wgs84_sf_tp_snap,
          dsn = here::here("data_fmt/epsg4326_point_snap.gpkg"),
@@ -142,16 +187,16 @@ wgs84_sf_wsd <- list.files(path = tempdir(),
   bind_rows() %>% 
   st_transform(crs = 5070) %>% 
   rowwise() %>% 
-  mutate(site_id = sum(c_across(cols = ends_with("tif")),
+  mutate(node_id = sum(c_across(cols = ends_with("tif")),
                        na.rm = TRUE)) %>% 
-  dplyr::select(site_id) %>% 
+  dplyr::select(node_id) %>% 
   ungroup() %>% 
   mutate(area = units::set_units(st_area(.), "km^2")) %>% 
-  group_by(site_id) %>% 
+  group_by(node_id) %>% 
   slice(which.max(area)) %>% # remove duplicates by outlet
   ungroup() %>% 
-  relocate(site_id, area) %>% 
-  arrange(site_id) %>% 
+  relocate(node_id, area) %>% 
+  arrange(node_id) %>% 
   st_transform(crs = 4326)
 
 st_write(wgs84_sf_wsd,
@@ -159,44 +204,26 @@ st_write(wgs84_sf_wsd,
          append = FALSE)
 
 ## distance
-wgs84_sfnet <- as_sfnetwork(wgs84_sf_str, directed = FALSE)
-wgs84_sfnetb <- st_network_blend(wgs84_sfnet, wgs84_sf_tp_snap) %>%
-  activate(edges) %>%
-  mutate(w = units::set_units(edge_length(), "km"))
-
-wgs84_sfnetb %>%
-  activate(edges) %>%
-  as_tibble() %>%
-  st_as_sf() %>%
-  st_write(here::here("data_fmt/epsg4326_str_mrb.gpkg"),
-           append = FALSE)
-
-nodes <- wgs84_sfnetb %>%
-  activate(nodes) %>%
-  as_tibble() %>%
-  mutate(node_id = row_number()) %>%
-  drop_na(site_id) %>%
-  pull(node_id) %>%
-  c(10344, .) # 10344 root node, checked manually in QGIS
-
+root_id <- 35 # root node id; currently manual check with QGIS
 m_dist <- st_network_cost(wgs84_sfnetb,
-                          from = nodes,
-                          to = nodes,
                           weights = "w")
 
 site_id <- wgs84_sfnetb %>% 
   activate(nodes) %>% 
-  as_tibble() %>% 
-  slice(nodes) %>% 
-  drop_na(site_id) %>% 
-  pull(site_id)
+  as_tibble() %>%
+  pull(index)
 
-v_u <- m_dist[1, -1]
+v_u <- m_dist[root_id, -root_id]
 m_u <- outer(v_u, v_u, FUN = "-")
 
-m_d <- m_dist[-1, -1]; colnames(m_d) <- site_id; rownames(m_d) <- site_id
-m_up <- abs(m_u - m_d) / 2; colnames(m_up) <- site_id; rownames(m_up) <- site_id
-m_down <- abs(m_u + m_d) / 2; colnames(m_down) <- site_id; rownames(m_down) <- site_id
+m_d <- m_dist[-root_id, -root_id]
+colnames(m_d) <- site_id[-root_id]; rownames(m_d) <- site_id[-root_id]
+
+m_up <- abs(m_u - m_d) / 2
+colnames(m_up) <- site_id[-root_id]; rownames(m_up) <- site_id[-root_id]
+
+m_down <- abs(m_u + m_d) / 2
+colnames(m_down) <- site_id[-root_id]; rownames(m_down) <- site_id[-root_id]
 
 x <- m2v(m_d)
 
@@ -209,10 +236,12 @@ z <- m2v(m_down) %>%
 df_dist <- purrr::reduce(list(x, y, z),
                          dplyr::left_join,
                          by = c("from", "to")) %>% 
-  mutate(from = as.numeric(from),
-         to = as.numeric(to)) %>% 
   mutate(across(.cols = c("distance", "up", "down"),
-                \(x) round(x, 2))) %>% 
+                \(x) round(x, 2)),
+         type = ifelse(str_detect(from, "o_") & str_detect(to, "o_"),
+                       yes = "observation",
+                       no = "prediction")
+         ) %>% 
   arrange(up)
 
 saveRDS(df_dist, here::here("data_fmt/data_distance.rds"))

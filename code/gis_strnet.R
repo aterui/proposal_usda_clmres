@@ -60,7 +60,7 @@ albers_sf_str_buff <- wgs84_sf_str %>%
   mutate(id = row_number())
   
 ### wgs84_sf_tp: vector point for TP sampling
-set.seed(123)
+set.seed(111)
 wgs84_sf_tp <- readRDS(here::here("data_raw/data_np.rds")) %>% 
   filter(characteristic %in% c("Phosphorus", "Total Phosphorus, mixed forms")) %>% 
   arrange(date) %>% 
@@ -225,13 +225,14 @@ colnames(m_up) <- site_id[-root_id]; rownames(m_up) <- site_id[-root_id]
 m_down <- abs(m_u + m_d) / 2
 colnames(m_down) <- site_id[-root_id]; rownames(m_down) <- site_id[-root_id]
 
-x <- m2v(m_d)
+x <- m2v(m_d) %>% 
+  rename(distance = value)
 
 y <- m2v(m_up) %>% 
-  rename(up = distance)
+  rename(up = value)
 
 z <- m2v(m_down) %>% 
-  rename(down = distance)
+  rename(down = value)
 
 df_dist <- purrr::reduce(list(x, y, z),
                          dplyr::left_join,

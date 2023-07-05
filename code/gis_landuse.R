@@ -59,6 +59,8 @@ df_lu <- exact_extract(albers_rs_fua,
 df_m <- df_tp %>% 
   left_join(df_lu, by = "node_id")
 
+saveRDS(df_m, "data_fmt/data_tpsub_master.rds")
+
 ggplot(df_m,
        aes(x = area,
            y = value)) +

@@ -31,12 +31,27 @@ df_dist <- readRDS("data_fmt/data_distance.rds") %>%
   mutate(c_flow = ifelse(up > 0, 0, value)) %>% 
   filter(from <= to)
 
+M <- df_dist %>% 
+  arrange(to) %>% 
+  pivot_wider(id_cols = from,
+              values_from = distance,
+              names_from = to, values_fill = 0) %>% 
+  arrange(from) %>% 
+  select(-from) %>% 
+  data.matrix()
+
+M <- M + t(M)
+W <- exp(-0.1 * M)
+diag(W) <- 0
+W <- W / rowSums(W)
+Y <- solve(diag(dim(M)[1]) - 0.1 * W) %*% rnorm(nrow(df0), sd = 0.1) %>% c()
+
+df0 <- mutate(df0, Y = Y)
 
 # jags setup --------------------------------------------------------------
 
-(fit <- geojags(log(value) ~ boot::logit(frac_agri) + log(area),
+(fit <- geojags(Y ~ boot::logit(frac_agri) + log(area),
                 data = df0,
                 dm = df_dist,
                 adapt = 100,
-                sample = 1000,
-                thin = 4))
+                sample = 1000))

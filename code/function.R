@@ -58,14 +58,14 @@ geojags <- function(formula,
   ## parameters ####
   para <- c("b",
             "sigma",
-            "theta")
+            "theta",
+            "lambda")
   
   ## model file ####
   model_text <- "
   model {
     ninfo <- 0.1
     df0 <- 6
-    zeros <- rep(0, Nsample)
     
     # prior -------------------------------------------------------------------
     
@@ -73,43 +73,36 @@ geojags <- function(formula,
       b[k] ~ dnorm(0, ninfo)
     }
     
-    for (o in 1) {
-      theta[o] ~ dgamma(1, 1)
-    }
-    
-    for (k in 1:2) {
+    for (k in 1) {
       tau[k] ~ dscaled.gamma(2.5, df0)  
       sigma[k] <- pow(tau[k], -0.5)
     }
     
+    theta ~ dunif(0, 10)
+    lambda ~ dnorm(0, ninfo)T(0, 1)
+    
     # likelihood --------------------------------------------------------------
     
-    ## model
-    mu <- X %*% b
-    
     for(i in 1:Nsample) {
-      Y[i] ~ dnorm(mu_hat[i], tau[1])
-      mu_hat[i] <- mu[i] + u[i]
+      Y[i] ~ dnorm(mu[i], tau[1])
+      mu[i] <- inprod(X[i, ], b[]) + lambda * inprod(Q[i, ], y[])
     }
     
-    ## spatial error
-    u[1:Nsample] ~ dmnorm.vcov(zeros[], S[,])
-    
     for (i in 1:Nsample) {
-      
-      S[i, i] <- pow(sigma[2], 2) * exp(-theta[1] * m_dist[i, i]) * m_w[i, i]
-      
+      S[i, i] <- 0
+      Q[i, 1:Nsample] <- S[i, ] / (sum(S[i, ]) + step(z[i]))
+      z[i] <- -sum(S[i, ])
       for (j in (i + 1):Nsample) {
-      
-        S[i, j] <- pow(sigma[2], 2) * exp(-theta[1] * m_dist[i, j]) * m_w[i, j]
+        S[i, j] <- exp(-theta * m_dist[i, j])# * m_w[i, j]
         S[j, i] <- S[i, j]
-        
       }
     }
     
   }
   
   data {
+    
+    y <- Y
     
     for (n in 1:Ncomb) {
       m_dist[From[n], To[n]] <- Distance[n]

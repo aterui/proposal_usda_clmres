@@ -18,15 +18,15 @@ Type objective_function<Type>::operator() () {
 DATA_VECTOR(y);
 DATA_MATRIX(X);
 DATA_MATRIX(D);
-DATA_SCALAR(lambda);
 
 // parameters:
 PARAMETER_VECTOR(b);
 PARAMETER(log_sigma);
 PARAMETER(log_theta);
-PARAMETER(lambda);
 
-// procedures: (transformed parameters)
+using namespace density;
+
+// transformed parameters
 Type sigma = exp(log_sigma);
 Type theta = exp(log_theta);
 
@@ -34,58 +34,50 @@ Type theta = exp(log_theta);
 ADREPORT(b);
 ADREPORT(sigma);
 ADREPORT(theta);
-ADREPORT(lambda);
 
 // negative log likelihood
-Type nll = 0;
-matrix<Type> W = exp(-theta * D.array()); 
-//vector<Type> sum_W = W.rowwise().sum();
-//matrix<Type> Q(W);
+matrix<Type> R = exp(- D.array() / theta); 
+matrix<Type> S = sigma * R.array(); 
+MVNORM_t<Type> dmnorm(S);
+vector<Type> u = y - X * b;
 
-//for (int i = 0; i < W.rows(); i++)
-//  Q.row(i) = W.row(i) / sum_W(i);
-
-vector<Type> u = W * y;
-nll = -sum(dnorm(y, X * b + lambda * u, sigma, true));
+parallel_accumulator<Type> nll(this);
+nll += dmnorm(u);
 
 return nll;
 }"
-write(tmb_model, file = "code/regression.cpp")
-compile("code/regression.cpp")
+write(tmb_model, file = "code/sem.cpp")
+compile("code/sem.cpp")
 
 
 # simulated data ----------------------------------------------------------
 
-set.seed(123)
-N <- 300
-theta <- 0.1
-lambda <- 1
+set.seed(121)
+N <- 200
+theta <- 10
 eps <- rnorm(N, sd = 0.1)
 X <- cbind(1, rnorm(N), rnorm(N))
-beta <- c(0.01, 1.8, 2.4)
+beta <- c(0.01, 0.8, 0.2)
 
-D <- cbind(runif(N, 0, 1), runif(N, 0, 1)) %>% 
+D <- cbind(runif(N, 0, 1000), runif(N, 0, 1000)) %>% 
   dist(diag = TRUE, upper = TRUE) %>% 
   data.matrix()
-W <- exp(-theta * D)
-diag(W) <- 0
-#Q <- W / rowSums(W)
+S <- 0.1 * exp(-D / theta)
 
-y <- solve(diag(N) - lambda * W) %*% (X %*% beta + eps) %>% 
-  c()
-
+y_hat <- X %*% beta
+y <- mvtnorm::rmvnorm(1, mean = y_hat, sigma = S) %>% c()
 
 # fitting -----------------------------------------------------------------
 
-dyn.load(dynlib("code/regression"))
+dyn.load(dynlib("code/sem"))
 
 obj <- MakeADFun(data = list(y = y,
                              D = D,
                              X = X), 
                  parameters = list(b = rep(0, ncol(X)),
-                                   log_sigma = log(1),
-                                   log_theta = log(0.1)),
-                 DLL = "regression")
+                                   log_sigma = log(0.1),
+                                   log_theta = log(10)),
+                 DLL = "sem")
 
 opt <- nlminb(start = obj$par,
               obj = obj$fn,
@@ -93,4 +85,5 @@ opt <- nlminb(start = obj$par,
 
 rep <- sdreport(obj)
 
-summary(rep, "report", p.value = TRUE)
+summary(rep, "report", p.value = TRUE) %>% 
+  round(3)

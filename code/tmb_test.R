@@ -1,89 +1,78 @@
 
 # setup -------------------------------------------------------------------
 
-source("code/library.R")
+#source("code/library.R")
 library(TMB)
+library(dplyr)
 
 # model -------------------------------------------------------------------
-list.files("code", pattern = c("\\.dll$|\\.cpp$|\\.o$"), full.names = T) %>% 
+list.files("code", pattern = c("\\.dll$|\\.o$"), full.names = T) %>% 
   file.remove()
 
-tmb_model <- "
-// linear regression
-#include <TMB.hpp>
-
-template<class Type>
-Type objective_function<Type>::operator() () {
-// data:
-DATA_VECTOR(y);
-DATA_MATRIX(X);
-DATA_MATRIX(D);
-
-// parameters:
-PARAMETER_VECTOR(b);
-PARAMETER(log_sigma);
-PARAMETER(log_theta);
-
-using namespace density;
-
-// transformed parameters
-Type sigma = exp(log_sigma);
-Type theta = exp(log_theta);
-
-// report
-ADREPORT(b);
-ADREPORT(sigma);
-ADREPORT(theta);
-
-// negative log likelihood
-matrix<Type> R = exp(- D.array() / theta); 
-matrix<Type> S = sigma * R.array(); 
-MVNORM_t<Type> dmnorm(S);
-vector<Type> u = y - X * b;
-
-parallel_accumulator<Type> nll(this);
-nll += dmnorm(u);
-
-return nll;
-}"
-write(tmb_model, file = "code/sem.cpp")
 compile("code/sem.cpp")
 
 
 # simulated data ----------------------------------------------------------
 
-set.seed(121)
-N <- 200
-theta <- 10
+set.seed(11)
+N <- 40
+theta <- 0.1
+sigma <- 0.1
 eps <- rnorm(N, sd = 0.1)
 X <- cbind(1, rnorm(N), rnorm(N))
 beta <- c(0.01, 0.8, 0.2)
+coord <- cbind(runif(N, 0, 100), runif(N, 0, 100))
 
-D <- cbind(runif(N, 0, 1000), runif(N, 0, 1000)) %>% 
+D <- coord %>% 
   dist(diag = TRUE, upper = TRUE) %>% 
   data.matrix()
-S <- 0.1 * exp(-D / theta)
 
-y_hat <- X %*% beta
-y <- mvtnorm::rmvnorm(1, mean = y_hat, sigma = S) %>% c()
+S <- sigma * exp(- theta * D)
+y <- mvtnorm::rmvnorm(1, mean = X %*% beta, sigma = S) %>% c()
+
 
 # fitting -----------------------------------------------------------------
+
+.valid_link <- c(identity = 0,
+                 log = 1)
+
+.valid_family <- c(gaussian = 0,
+                   poisson = 1)
 
 dyn.load(dynlib("code/sem"))
 
 obj <- MakeADFun(data = list(y = y,
                              D = D,
-                             X = X), 
-                 parameters = list(b = rep(0, ncol(X)),
+                             X = X,
+                             link = .valid_link[poisson()$link],
+                             family = .valid_family[poisson()$family]), 
+                 parameters = list(b = beta,
+                                   u = rep(1, length(y)),
+                                   log_sigma0 = log(0.1),
                                    log_sigma = log(0.1),
-                                   log_theta = log(10)),
+                                   log_theta = log(0.1)),
+                 random = "u",
                  DLL = "sem")
 
 opt <- nlminb(start = obj$par,
               obj = obj$fn,
-              gr = obj$gr)
+              gr = obj$gr, control = list(iter.max = 300,
+                                          eval.max = 400))
 
 rep <- sdreport(obj)
 
 summary(rep, "report", p.value = TRUE) %>% 
   round(3)
+
+
+# tmb ---------------------------------------------------------------------
+
+library(glmmTMB)
+pos <- numFactor(coord[,1], coord[,2])
+
+df0 <- tibble(y = y, pos = pos, group = factor(rep(1, length(y))))
+fit <- glmmTMB(y ~ 1 + X[, 2] + X[,3] + exp(pos + 0 | group),
+               data = df0, family = "gaussian",
+               dispformula=~0)
+
+summary(fit)

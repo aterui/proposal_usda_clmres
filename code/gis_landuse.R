@@ -11,7 +11,7 @@ source(here::here("code/function.R"))
 root <- here::here() %>% 
   str_remove("public-proj_markov-network")
 
-albers_rs_lu <- terra::rast(paste0(root, "priv-proj_midwest-gis/data_gis/albers_lu.tif"))
+albers_rs_lu <- terra::rast("E:/github/priv-proj_midwest-gis/data_gis/albers_lu.tif")
 albers_sf_wsd <- st_read("data_fmt/epsg4326_wsd.gpkg") %>% 
   st_transform(5070)
 df_tp <- st_read("data_fmt/epsg4326_point_snap.gpkg") %>% 

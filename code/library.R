@@ -1,7 +1,7 @@
 
-pacman::p_load(tidyverse,
+pacman::p_load(sf,
+               tidyverse,
                dataRetrieval,
-               sf,
                terra,
                whitebox,
                tmap,

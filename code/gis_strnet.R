@@ -12,15 +12,15 @@ root <- here::here() %>%
   str_remove("public-proj_markov-network")
 
 ## read layers
-### st_strg: grid stream layer
+### strg: grid stream layer
 wgs84_sr_strg <- terra::rast("data_raw/epsg4326_stream_grid_50sqkm.tif")
 
 ### dir: flow direction
-wgs84_sr_dir <- terra::rast(paste0(root, "priv-proj_midwest-gis/data_gis/epsg4326_dir.tif")) %>% 
+wgs84_sr_dir <- terra::rast("E:/github/priv-proj_midwest-gis/data_gis/epsg4326_dir.tif") %>% 
   arc2d8()
 
 ### upa: upstream drainage area
-wgs84_sr_upa <- terra::rast(paste0(root, "priv-proj_midwest-gis/data_gis/epsg4326_upa.tif"))
+wgs84_sr_upa <- terra::rast("E:/github/priv-proj_midwest-gis/data_gis/epsg4326_upa.tif")
 
 ### sf_mask: mask layer
 wgs84_sf_mask <- st_read(here::here("data_raw/epsg4269_huc4_mrb.gpkg")) %>% 
@@ -135,6 +135,11 @@ wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
 wgs84_sf_tp_snap <- st_read(dsn = v_name[str_detect(v_name, "outlet_snap")])
 
 wgs84_sfnet <- as_sfnetwork(wgs84_sf_str, directed = FALSE)
+wgs84_sfnet %>%
+  activate(edges) %>% 
+  st_as_sf() %>% 
+  st_write("data_fmt/epsg4326_str_mrb_raw.gpkg")
+
 wgs84_sfnetb <- st_network_blend(wgs84_sfnet, wgs84_sf_tp_snap) %>%
   activate(edges) %>%
   mutate(w = units::set_units(edge_length(), "km")) %>% 

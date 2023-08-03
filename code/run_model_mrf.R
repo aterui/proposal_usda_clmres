@@ -126,5 +126,5 @@ g_sim <- ggplot(df_plot) +
 
 ggsave(g_sim,
        file = "output/fig_sim.pdf",
-       width = 8,
-       height = 4)
+       width = 5,
+       height = 2.5)

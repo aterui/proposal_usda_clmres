@@ -1,0 +1,11 @@
+
+pacman::p_load(sf,
+               tidyverse,
+               dataRetrieval,
+               terra,
+               whitebox,
+               tmap,
+               tidygraph,
+               igraph,
+               sfnetworks,
+               exactextractr)

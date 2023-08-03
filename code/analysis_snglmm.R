@@ -144,7 +144,7 @@ g_ex <- ggplot(sf_str) +
   MetBrewer::scale_color_met_c("Hiroshige", direction = -1) +
   geom_sf(data = st_as_sf(df0),
           aes(color = value),
-          alpha = 0.5, shape = 21) +
+          alpha = 0.5, shape = 15) +
   theme_bw() +
   labs(color = "TP (mg/L)")
 

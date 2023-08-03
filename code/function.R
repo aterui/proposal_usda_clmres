@@ -269,3 +269,4 @@ geojags <- function(formula,
   return(MCMCvis::MCMCsummary(post$mcmc))
 }
 
+

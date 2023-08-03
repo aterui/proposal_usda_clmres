@@ -1,4 +1,112 @@
 
+# delineate watersheds ----------------------------------------------------
+
+watershed <- function(str_grid,
+                      f_dir,
+                      f_acc,
+                      outlet,
+                      snap_dist = 5,
+                      output_dir = "data_fmt",
+                      filename = "watershed",
+                      file_ext = "gpkg",
+                      keep_outlet = FALSE) {
+  
+  ## temporary files
+  message("Saving temporary files...")
+  v_name <- tempdir() %>% 
+    paste(c("strg.tif",
+            "outlet.shp",
+            "outlet_snap.shp",
+            "upa.tif",
+            "dir.tif",
+            "wsd.tif"),
+          sep = "\\")
+  
+  terra::writeRaster(str_grid,
+                     filename = v_name[str_detect(v_name, "strg")],
+                     overwrite = TRUE)
+  
+  terra::writeRaster(f_dir,
+                     filename = v_name[str_detect(v_name, "dir")],
+                     overwrite = TRUE)
+  
+  terra::writeRaster(f_acc,
+                     filename = v_name[str_detect(v_name, "upa")],
+                     overwrite = TRUE)
+  
+  sf::st_write(outlet,
+               dsn = v_name[str_detect(v_name, "outlet.shp")],
+               append = FALSE)
+  
+  ## snapping
+  message("Snap outlet points to the nearest stream grid...")
+  whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
+                                        streams = v_name[str_detect(v_name, "strg")],
+                                        output = v_name[str_detect(v_name, "outlet_snap")],
+                                        snap_dist = snap_dist)
+  
+  ## delineation
+  message("Delineate watersheds...")
+  whitebox::wbt_unnest_basins(d8_pntr = v_name[str_detect(v_name, "dir")],
+                              pour_pts = v_name[str_detect(v_name, "outlet_snap")],
+                              output = v_name[str_detect(v_name, "wsd")])
+  
+  ## vectorize
+  message("Vectorize raster watersheds...")
+  
+  sf_wsd <- list.files(path = tempdir(),
+                       pattern = "wsd",
+                       full.names = TRUE) %>%
+    lapply(terra::rast) %>%
+    lapply(stars::st_as_stars) %>%
+    lapply(sf::st_as_sf,
+           merge = TRUE,
+           as_points = FALSE) %>%
+    dplyr::bind_rows() %>%
+    sf::st_transform(crs = 5070) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(site_id = sum(dplyr::c_across(cols = ends_with("tif")),
+                                na.rm = TRUE)) %>%
+    dplyr::select(site_id) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(area = units::set_units(st_area(.), "km^2")) %>%
+    dplyr::group_by(site_id) %>%
+    dplyr::slice(which.max(area)) %>% # remove duplicates by outlet
+    dplyr::ungroup() %>%
+    dplyr::relocate(site_id, area) %>%
+    dplyr::arrange(site_id) %>%
+    sf::st_transform(crs = 4326)
+  
+  if (!(output_dir %in% list.files(".")))
+    dir.create(output_dir)
+  
+  sf::st_write(sf_wsd,
+               dsn = paste0(output_dir,
+                            "/",
+                            filename,
+                            ".",
+                            file_ext),
+               append = FALSE)
+  
+  if (keep_outlet) {
+    outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")])
+    sf::st_write(outlet_snap,
+                 dsn = paste0(output_dir,
+                              "/",
+                              "outlet_snap",
+                              ".",
+                              file_ext),
+                 append = FALSE)    
+  }
+  
+  ## remove temporary files
+  message("Removing temporary files...")
+  files <- list.files(tempdir(), full.names = T)
+  cl <- call("file.remove", files)
+  bools <- suppressWarnings(eval(cl, envir = parent.frame()))
+  message(paste0("Following files were removed from a temporary dirctory: ",
+                 files[bools]))
+}
 
 # arc2d8 ------------------------------------------------------------------
 

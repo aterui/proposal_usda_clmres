@@ -270,3 +270,25 @@ geojags <- function(formula,
 }
 
 
+# min matrix --------------------------------------------------------------
+
+symmetrize <- function(X, method = "min") {
+  tX <- t(X)
+  l <- X[lower.tri(X)]
+  u <- tX[lower.tri(tX)]
+  
+  if (method == "mean")
+    y <- apply(cbind(l, u), MARGIN = 1, FUN = mean)
+  
+  if (method == "min")
+    y <- apply(cbind(l, u), MARGIN = 1, FUN = function(x) x[which.min(abs(x))])
+  
+  if (method == "max")
+    y <- apply(cbind(l, u), MARGIN = 1, FUN = function(x) x[which.max(abs(x))])
+  
+  M <- matrix(0, nrow = dim(X)[1], ncol = dim(X)[2])
+  M[lower.tri(M)] <- y
+  M <- M + t(M)
+  return(M)
+}
+

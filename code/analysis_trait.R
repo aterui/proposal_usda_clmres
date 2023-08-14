@@ -6,7 +6,7 @@ source("code/function.R")
 
 set.seed(122)
 df_site <- readRDS("data_fmt/data_mrb_site.rds") %>% 
-  sample_n(size = 100) %>% 
+  #sample_n(size = 100) %>% 
   mutate(x_log_area = c(scale(log(area))),
          x_logit_agri = c(scale(boot::logit(frac_agri))),
          x_btw = c(scale(btw)))
@@ -22,7 +22,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > 30) %>% 
+  filter(n > floor(nrow(df_site) * 0.2)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -71,6 +71,9 @@ for (i in 1:length(sp)) {
   
 }
 
+Beta <- as_tibble(t(B)) %>% 
+  mutate(commonname = colnames(Y[,-c(1,2)]))
+
 # fish trait --------------------------------------------------------------
 
 df_trait <- read_csv(here::here("data_raw/fish_trait.csv")) %>% 
@@ -80,6 +83,35 @@ df_trait <- read_csv(here::here("data_raw/fish_trait.csv")) %>%
                                       "_"),
          commonname = str_remove_all(commonname,
                                      "-"),
-         commonname = str_to_lower(commonname)) %>% 
+         commonname = str_to_lower(commonname),
+         commonname = ifelse(commonname == "eastern_blacknose_dace",
+                             "blacknose_dace",
+                             commonname)) %>% 
   filter(commonname %in% sp)
 
+df_plot <- Beta %>% 
+  left_join(df_trait, by = "commonname") %>% 
+  mutate(primary_consumer = ifelse(detritus + algphyto + macvascu > 0, 1, 0),
+         predator = ifelse(invlvfsh + fshcrcrb, 1, 0),
+         substrate = ifelse(claysilt + sand > 1, 1, 0),
+         lithophils = ifelse(a_1_3a + a_2_3a + a_1_3b + a_2_3b +
+                               b_1_3a + b_2_3a + b_2_3b > 0,
+                             1, 0)) %>% 
+  drop_na(lithophils)
+
+
+# figure ------------------------------------------------------------------
+
+fm <- lm(log(fecundity) ~ log(maxtl),
+         df_plot)
+df_plot <- df_plot %>% 
+  mutate(fec = resid(fm))
+
+MASS::rlm(V3 ~ fec + log(maxtl) + lithophils + substrate,
+          df_plot) %>% 
+  summary()
+
+df_plot %>% 
+  ggplot(aes(y = maxtl,
+             x = primary_consumer)) +
+  geom_point()

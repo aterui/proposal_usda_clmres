@@ -6,7 +6,7 @@ source("code/function.R")
 
 set.seed(122)
 df_site <- readRDS("data_fmt/data_mrb_site.rds") %>% 
-  sample_n(size = 100) %>% 
+  #sample_n(size = 100) %>% 
   mutate(x_log_area = c(scale(log(area))),
          x_logit_agri = c(scale(boot::logit(frac_agri))),
          x_btw = c(scale(btw)))
@@ -22,7 +22,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > 30) %>% 
+  filter(n > floor(nrow(df_site) * 0.2)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -83,21 +83,21 @@ g <- graph_from_adjacency_matrix(sA,
 E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
 
 gnet <- ggraph::ggraph(g, layout = "circle") +
-  geom_edge_arc(aes(width = abs(weight),
-                     color = sign),
-                 alpha = 0.5) +
+  geom_edge_arc(aes(alpha = abs(weight),
+                    color = sign),
+                width = 1) +
   coord_fixed() +
   geom_node_point(size = 5) +
   scale_edge_color_manual(values = c(`Plus` = "steelblue",
                                      `Minus` = "salmon")) +
-  labs(edge_color = "Sign",
-       edge_width = "Strength") +
   theme_void() +
   theme(legend.title = element_text(size = 12),
         legend.text = element_text(size = 10),
         legend.key.size = unit(1, "cm"),
         plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
-                             unit = "cm"))
+                             unit = "cm")) +
+  guides(edge_color = "none",
+         edge_alpha = "none")
 
 ggsave(gnet, filename = "output/fig_fish_network.pdf",
        width = 10,

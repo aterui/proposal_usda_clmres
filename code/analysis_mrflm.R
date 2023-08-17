@@ -6,7 +6,7 @@ source("code/function.R")
 
 set.seed(122)
 df_site <- readRDS("data_fmt/data_mrb_site.rds") %>% 
-  sample_n(size = 100) %>% 
+  #sample_n(size = 100) %>% 
   mutate(x_log_area = c(scale(log(area))),
          x_logit_agri = c(scale(boot::logit(frac_agri))),
          x_btw = c(scale(btw)))
@@ -22,7 +22,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > 40) %>% #floor(nrow(df_site) * 0.2)) %>% 
+  filter(n > floor(nrow(df_site) * 0.2)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -73,92 +73,14 @@ for (i in 1:length(sp)) {
 
 sA <- symmetrize(A, "min")
 
-# energy landscape --------------------------------------------------------
-
-m_state <- rep(list(c(0, 1)), length(sp)) %>% 
-  do.call(CJ, .) %>% 
-  mltools::sparsify()
-
-
-
-
-## binary matrix of presence absence
-ncore <- parallel::detectCores() - 1
-cl <- parallel::makeCluster(ncore)
-doSNOW::registerDoSNOW(cl)
-
-list_spm <- foreach(x = c(0, seq_len(length(sp)))) %dopar% {
-  if (x == 0) {
-    m <- rep(0, length(sp))
-  } else {
-    cbn <- combn(length(sp), x)
-    m <- apply(cbn, MARGIN = 2,
-               function(i) {
-                 v <- rep(0, length(sp))
-                 v[i] <- 1
-                 return(v)
-               })
-  }
-  
-  return(as.matrix(t(m)))
-} 
-
-parallel::stopCluster(cl)
-gc()
-
-list_one <- lapply(list_spm,
-                   function(X) {
-                     X[X == 0] <- -1
-                     return(X)
-                   })
-
-## diagonal elements
-## non-species-association factors
 Xp <- c(1, 0, 0, 0)
 o <- drop(Xp %*% B)
 diag(sA) <- o
 
-energy <- lapply(list_spm,
-                 function(X) exp(-rowSums(X %*% sA))) %>% 
-  unlist()
+# energy landscape --------------------------------------------------------
 
-
-## neighbor analysis
-tictoc::tic()
-ncore <- parallel::detectCores() - 1
-cl <- parallel::makeCluster(ncore)
-doSNOW::registerDoSNOW(cl)
-
-nid0 <- cumsum(lapply(list_spm, nrow))
-df_nb <- foreach(i = 1:length(sp),
-                 .combine = rbind) %dopar% {
-                   
-                   m <- list_one[[i + 1]] %*% t(list_one[[i]])
-                   list_nb <- apply(m, 2,
-                                    FUN = function(x) which(x == length(sp) - 2) + nid0[i],
-                                    simplify = FALSE)
-                   
-                   nnb <- length(list_nb[[1]]) # number of neiboughs to each node
-                   from <- rep(if (i == 1) 1 else (nid0[i - 1] + 1):nid0[i],
-                               each = nnb)
-                   cout <- data.table::data.table(from, to = unlist(list_nb), k = i)
-                   return(cout)
-                 }
-
-parallel::stopCluster(cl)
-tictoc::toc()
-gc()
-
-graph <- graph_from_data_frame(df_nb[,c("from", "to")], directed = FALSE)
-V(graph)$energy <- energy[seq_len(length(V(graph)))]
-
-minima <- sapply(seq_len(length(V(graph))),
-                 function(x) {
-                   gap <- energy[x] - energy[neighbors(graph, x)]
-                   y <- all(gap < 0)
-                   return(y)
-                 })
-
+log_energy <- local_energy(N = length(sp), A = sA)
+m <- local_minima(N = length(sp), e = log_energy)
 
 
 # plot --------------------------------------------------------------------

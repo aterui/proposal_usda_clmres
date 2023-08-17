@@ -295,97 +295,58 @@ symmetrize <- function(X, method = "min") {
 
 # ela function ------------------------------------------------------------
 
-set.seed(1234L)
-N <- 20L
-performance <- runif(2^N)
-powers_of_two <- as.integer(rev(2L ^ (0L:(N - 1L))))
-
-is_local_max <- sapply(0L:(2^N - 1), function(i) {
-  multipliers <- as.integer(rev(intToBits(i)[1L:N])) * -1L
-  multipliers[multipliers == 0L] <- 1L
-  neighbors <- i + powers_of_two * multipliers
-  # compensate that R vectors are 1-indexed
-  !any(performance[neighbors + 1L] > performance[i + 1L])
-})
-
-
-
-perm <- function(n_sp) {
-  # sparse matrix for possible states
-  state <- rep(list(c(0, 1)), n_sp) %>% 
-    do.call(data.table::CJ, .) %>% 
-    mltools::sparsify()
-  
-  return(state)
-}
-
-calc_en <- function(state, A) {
-  
-  ncore <- parallel::detectCores() - 1
-  n_per_gr <- ceiling(nrow(state) / ncore)
-  gr <- 1:nrow(state) %/% n_per_gr + 1
+local_energy <- function(N, A, ncore = 4) {
+  pw2 <- as.integer(2L ^ (0L:(N - 1L)))
+  n_per_gr <- ceiling(2^N / ncore)
+  gr <- seq_len(2^N) %/% n_per_gr + 1
   
   cl <- parallel::makeCluster(ncore)
   doSNOW::registerDoSNOW(cl)
   
-  log_energy <- foreach(i = 1:max(gr),
-                        .combine = c,
-                        .packages = c("Matrix", "dplyr")) %dopar% {
-                          
-                          sub_state <- state[which(gr == i), ]
-                          y <- apply(sub_state,
-                                     MARGIN = 1,
-                                     function(x) {
-                                       x %*% t(A * x)
-                                     }) %>% 
-                            t() %>% 
-                            rowSums()
-                          
-                          return(-y)
-                        }
+  cout <- foreach(g = 1L:max(gr),
+                  .combine = c) %dopar% {
+                    index <- which(gr == g)
+                    sapply(index,
+                           function(i) {
+                             x <- as.integer(intToBits(i)[1L:N])
+                             y <- -sum(drop(x %*% t(A * x)))
+                             return(y)
+                           })
+                  }
   
   parallel::stopCluster(cl)
+  gc(); gc()
   
-  return(log_energy) 
+  return(cout)
 }
 
-
-calc_nei <- function(state) {
+local_minima <- function(N, e, ncore = 4) {
   
-  nsp <- ncol(state)
-  z <- rowSums(state)
-  state <- state[order(z),]
-  index0 <- cumsum(c(1, choose(nsp, 1:nsp)))
+  library(foreach)
   
-  ncore <- parallel::detectCores() - 1
-  n_per_gr <- ceiling(nrow(state) / ncore)
-  gr <- 1:nrow(state) %/% n_per_gr + 1
+  pw2 <- as.integer(2L ^ (0L:(N - 1L)))
+  n_per_gr <- floor((2L ^ N) / ncore)
+  gr <- (1:(2L ^ N - 1)) %/% n_per_gr + 1
   
+  cl <- parallel::makeCluster(ncore)
+  doSNOW::registerDoSNOW(cl)
   
+  cout <- foreach(g = 1L:max(gr),
+                  .combine = c) %dopar% {
+                    
+                    index <- which(gr == g)
+                    
+                    sapply(index, function(i) {
+                      x <- as.integer(intToBits(i)[1L:N]) * -1L
+                      x[x == 0L] <- 1L
+                      nei <- i + pw2 * x + 1
+                      all(e[nei] > e[i + 1L])
+                    })
+                    
+                  }
   
-  # # cl <- parallel::makeCluster(ncore)
-  # # doSNOW::registerDoSNOW(cl)
-  # 
-  # dt_nei <- foreach(i = 1:max(gr),
-  #                   .combine = rbind,
-  #                   .packages = "Matrix") %do% {
-  #                     index <- which(gr == i)
-  #                     
-  #                     nei <- sapply(index, function(j) {
-  #                       st <- which.min(index0 < j)
-  #                       en <- st + 1
-  #                       sub_state <- state[(index0[st] + 1):index0[en],]
-  #                       
-  #                       cout <- which(colSums(abs(t(sub_state) - state[j,])) == 1)
-  #                       return(cout)
-  #                     })
-  #                     
-  #                     data.table::data.table(from = rep(index,
-  #                                                       each = nrow(nei)),
-  #                                            to = c(nei))
-  #                   }
-  # 
-  # # parallel::stopCluster(cl)
+  parallel::stopCluster(cl)
+  gc(); gc()
   
-  return(dt_nei) 
+  return(cout)
 }

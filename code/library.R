@@ -12,4 +12,5 @@ pacman::p_load(sf,
                vegan,
                ggraph,
                foreach,
-               glmnet)
+               glmnet,
+               data.table)

@@ -6,7 +6,7 @@ source("code/function.R")
 
 set.seed(122)
 df_site <- readRDS("data_fmt/data_mrb_site.rds") %>% 
-  #sample_n(size = 100) %>% 
+  sample_n(size = 100) %>% 
   mutate(x_log_area = c(scale(log(area))),
          x_logit_agri = c(scale(boot::logit(frac_agri))),
          x_btw = c(scale(btw)))
@@ -22,7 +22,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > floor(nrow(df_site) * 0.2)) %>% 
+  filter(n > 40) %>% #floor(nrow(df_site) * 0.2)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -73,57 +73,38 @@ for (i in 1:length(sp)) {
 
 sA <- symmetrize(A, "min")
 
-
-# plot --------------------------------------------------------------------
-
-g <- graph_from_adjacency_matrix(sA,
-                                 mode = "lower",
-                                 weighted = "weight")
-
-E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
-
-gnet <- ggraph::ggraph(g, layout = "circle") +
-  geom_edge_arc(aes(alpha = abs(weight),
-                    color = sign),
-                width = 1) +
-  coord_fixed() +
-  geom_node_point(size = 5) +
-  scale_edge_color_manual(values = c(`Plus` = "steelblue",
-                                     `Minus` = "salmon")) +
-  theme_void() +
-  theme(legend.title = element_text(size = 12),
-        legend.text = element_text(size = 10),
-        legend.key.size = unit(1, "cm"),
-        plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
-                             unit = "cm")) +
-  guides(edge_color = "none",
-         edge_alpha = "none")
-
-ggsave(gnet, filename = "output/fig_fish_network.pdf",
-       width = 10,
-       height = 8)
-
-
 # energy landscape --------------------------------------------------------
 
+m_state <- rep(list(c(0, 1)), length(sp)) %>% 
+  do.call(CJ, .) %>% 
+  mltools::sparsify()
+
+
+
+
 ## binary matrix of presence absence
-list_spm <- lapply(c(0, seq_len(length(sp))),
-                   function(x) {
-                     
-                     if (x == 0) {
-                       m <- rep(0, length(sp))
-                     } else {
-                       cbn <- combn(length(sp), x)
-                       m <- apply(cbn, MARGIN = 2,
-                                  function(i) {
-                                    v <- rep(0, length(sp))
-                                    v[i] <- 1
-                                    return(v)
-                                  })
-                     }
-                     
-                     return(as.matrix(t(m)))
-                   })
+ncore <- parallel::detectCores() - 1
+cl <- parallel::makeCluster(ncore)
+doSNOW::registerDoSNOW(cl)
+
+list_spm <- foreach(x = c(0, seq_len(length(sp)))) %dopar% {
+  if (x == 0) {
+    m <- rep(0, length(sp))
+  } else {
+    cbn <- combn(length(sp), x)
+    m <- apply(cbn, MARGIN = 2,
+               function(i) {
+                 v <- rep(0, length(sp))
+                 v[i] <- 1
+                 return(v)
+               })
+  }
+  
+  return(as.matrix(t(m)))
+} 
+
+parallel::stopCluster(cl)
+gc()
 
 list_one <- lapply(list_spm,
                    function(X) {
@@ -149,7 +130,7 @@ cl <- parallel::makeCluster(ncore)
 doSNOW::registerDoSNOW(cl)
 
 nid0 <- cumsum(lapply(list_spm, nrow))
-df_nb <- foreach(i = 1:5,
+df_nb <- foreach(i = 1:length(sp),
                  .combine = rbind) %dopar% {
                    
                    m <- list_one[[i + 1]] %*% t(list_one[[i]])
@@ -177,15 +158,36 @@ minima <- sapply(seq_len(length(V(graph))),
                    y <- all(gap < 0)
                    return(y)
                  })
+
+
+
+# plot --------------------------------------------------------------------
 # 
-# # adj <- igraph::graph.adjlist(nb, mode = "total")
-# # V(adj)$energy <- energy
-# # 
-# # 
-# # glay <- create_layout(adj, layout = "lgl")
-# # glay$y <- log(glay$energy)
-# # 
-# # ggraph(glay) +
-# #   geom_edge_link(alpha = 0.5) +
-# #   geom_node_point(aes(color = energy,
-# #                       size = energy))
+# g <- graph_from_adjacency_matrix(sA,
+#                                  mode = "lower",
+#                                  weighted = "weight")
+# 
+# E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
+# 
+# gnet <- ggraph::ggraph(g, layout = "circle") +
+#   geom_edge_arc(aes(alpha = abs(weight),
+#                     color = sign),
+#                 width = 1) +
+#   coord_fixed() +
+#   geom_node_point(size = 5) +
+#   scale_edge_color_manual(values = c(`Plus` = "steelblue",
+#                                      `Minus` = "salmon")) +
+#   theme_void() +
+#   theme(legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 10),
+#         legend.key.size = unit(1, "cm"),
+#         plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
+#                              unit = "cm")) +
+#   guides(edge_color = "none",
+#          edge_alpha = "none")
+# 
+# ggsave(gnet, filename = "output/fig_fish_network.pdf",
+#        width = 10,
+#        height = 8)
+
+

@@ -292,3 +292,5 @@ symmetrize <- function(X, method = "min") {
   return(M)
 }
 
+
+# ela function ------------------------------------------------------------

@@ -294,3 +294,18 @@ symmetrize <- function(X, method = "min") {
 
 
 # ela function ------------------------------------------------------------
+
+set.seed(1234L)
+N <- 20L
+performance <- runif(2^N)
+powers_of_two <- as.integer(rev(2L ^ (0L:(N - 1L))))
+
+is_local_max <- sapply(0L:(2^N - 1), function(i) {
+  multipliers <- as.integer(rev(intToBits(i)[1L:N])) * -1L
+  multipliers[multipliers == 0L] <- 1L
+  neighbors <- i + powers_of_two * multipliers
+  # compensate that R vectors are 1-indexed
+  !any(performance[neighbors + 1L] > performance[i + 1L])
+})
+
+

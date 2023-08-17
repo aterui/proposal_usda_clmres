@@ -309,3 +309,83 @@ is_local_max <- sapply(0L:(2^N - 1), function(i) {
 })
 
 
+
+perm <- function(n_sp) {
+  # sparse matrix for possible states
+  state <- rep(list(c(0, 1)), n_sp) %>% 
+    do.call(data.table::CJ, .) %>% 
+    mltools::sparsify()
+  
+  return(state)
+}
+
+calc_en <- function(state, A) {
+  
+  ncore <- parallel::detectCores() - 1
+  n_per_gr <- ceiling(nrow(state) / ncore)
+  gr <- 1:nrow(state) %/% n_per_gr + 1
+  
+  cl <- parallel::makeCluster(ncore)
+  doSNOW::registerDoSNOW(cl)
+  
+  log_energy <- foreach(i = 1:max(gr),
+                        .combine = c,
+                        .packages = c("Matrix", "dplyr")) %dopar% {
+                          
+                          sub_state <- state[which(gr == i), ]
+                          y <- apply(sub_state,
+                                     MARGIN = 1,
+                                     function(x) {
+                                       x %*% t(A * x)
+                                     }) %>% 
+                            t() %>% 
+                            rowSums()
+                          
+                          return(-y)
+                        }
+  
+  parallel::stopCluster(cl)
+  
+  return(log_energy) 
+}
+
+
+calc_nei <- function(state) {
+  
+  nsp <- ncol(state)
+  z <- rowSums(state)
+  state <- state[order(z),]
+  index0 <- cumsum(c(1, choose(nsp, 1:nsp)))
+  
+  ncore <- parallel::detectCores() - 1
+  n_per_gr <- ceiling(nrow(state) / ncore)
+  gr <- 1:nrow(state) %/% n_per_gr + 1
+  
+  
+  
+  # # cl <- parallel::makeCluster(ncore)
+  # # doSNOW::registerDoSNOW(cl)
+  # 
+  # dt_nei <- foreach(i = 1:max(gr),
+  #                   .combine = rbind,
+  #                   .packages = "Matrix") %do% {
+  #                     index <- which(gr == i)
+  #                     
+  #                     nei <- sapply(index, function(j) {
+  #                       st <- which.min(index0 < j)
+  #                       en <- st + 1
+  #                       sub_state <- state[(index0[st] + 1):index0[en],]
+  #                       
+  #                       cout <- which(colSums(abs(t(sub_state) - state[j,])) == 1)
+  #                       return(cout)
+  #                     })
+  #                     
+  #                     data.table::data.table(from = rep(index,
+  #                                                       each = nrow(nei)),
+  #                                            to = c(nei))
+  #                   }
+  # 
+  # # parallel::stopCluster(cl)
+  
+  return(dt_nei) 
+}

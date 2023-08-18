@@ -371,6 +371,7 @@ local_minima <- function(N, e, ncore = 4) {
                       dt0 <- data.table::data.table(from = rep(int, each = N) + 1L,
                                                     to = v_nei,
                                                     int = rep(int, each = N))
+                      return(dt0[to > from, ])
                     }
   
   parallel::stopCluster(cl)

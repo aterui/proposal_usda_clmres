@@ -21,7 +21,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > floor(nrow(df_site) * 0.3)) %>% 
+  filter(n > floor(nrow(df_site) * 0.25)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -86,10 +86,7 @@ tictoc::tic()
 m <- local_minima(N = length(sp), e = log_energy)
 tictoc::toc()
 
-dt_nei <- attr(m, "neighbor")
-
-graph <- graph_from_data_frame(dt_nei[to > from, ],
-                               directed = FALSE)
+graph <- graph_from_data_frame(attr(m, "neighbor"), directed = FALSE)
 
 # plot --------------------------------------------------------------------
 

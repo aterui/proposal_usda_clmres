@@ -6,7 +6,6 @@ source("code/function.R")
 
 set.seed(122)
 df_site <- readRDS("data_fmt/data_mrb_site.rds") %>% 
-  #sample_n(size = 100) %>% 
   mutate(x_log_area = c(scale(log(area))),
          x_logit_agri = c(scale(boot::logit(frac_agri))),
          x_btw = c(scale(btw)))
@@ -22,7 +21,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > floor(nrow(df_site) * 0.2)) %>% 
+  filter(n > floor(nrow(df_site) * 0.3)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -77,39 +76,48 @@ Xp <- c(1, 0, 0, 0)
 o <- drop(Xp %*% B)
 diag(sA) <- o
 
+
 # energy landscape --------------------------------------------------------
-
+tictoc::tic()
 log_energy <- local_energy(N = length(sp), A = sA)
-m <- local_minima(N = length(sp), e = log_energy)
+tictoc::toc()
 
+tictoc::tic()
+m <- local_minima(N = length(sp), e = log_energy)
+tictoc::toc()
+
+dt_nei <- attr(m, "neighbor")
+
+graph <- graph_from_data_frame(dt_nei[to > from, ],
+                               directed = FALSE)
 
 # plot --------------------------------------------------------------------
-# 
-# g <- graph_from_adjacency_matrix(sA,
-#                                  mode = "lower",
-#                                  weighted = "weight")
-# 
-# E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
-# 
-# gnet <- ggraph::ggraph(g, layout = "circle") +
-#   geom_edge_arc(aes(alpha = abs(weight),
-#                     color = sign),
-#                 width = 1) +
-#   coord_fixed() +
-#   geom_node_point(size = 5) +
-#   scale_edge_color_manual(values = c(`Plus` = "steelblue",
-#                                      `Minus` = "salmon")) +
-#   theme_void() +
-#   theme(legend.title = element_text(size = 12),
-#         legend.text = element_text(size = 10),
-#         legend.key.size = unit(1, "cm"),
-#         plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
-#                              unit = "cm")) +
-#   guides(edge_color = "none",
-#          edge_alpha = "none")
-# 
-# ggsave(gnet, filename = "output/fig_fish_network.pdf",
-#        width = 10,
-#        height = 8)
+
+g <- graph_from_adjacency_matrix(sA,
+                                 mode = "lower",
+                                 weighted = "weight")
+
+E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
+
+gnet <- ggraph::ggraph(g, layout = "circle") +
+  geom_edge_arc(aes(alpha = abs(weight),
+                    color = sign),
+                width = 1) +
+  coord_fixed() +
+  geom_node_point(size = 5) +
+  scale_edge_color_manual(values = c(`Plus` = "steelblue",
+                                     `Minus` = "salmon")) +
+  theme_void() +
+  theme(legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "cm"),
+        plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
+                             unit = "cm")) +
+  guides(edge_color = "none",
+         edge_alpha = "none")
+
+ggsave(gnet, filename = "output/fig_fish_network.pdf",
+       width = 10,
+       height = 8)
 
 

@@ -86,35 +86,40 @@ tictoc::tic()
 m <- local_minima(N = length(sp), e = log_energy)
 tictoc::toc()
 
+tictoc::tic()
 graph <- graph_from_data_frame(attr(m, "neighbor"), directed = FALSE)
+tictoc::toc()
+
+saveRDS(list(log_energy = log_energy, minima = m, graph = graph),
+        "output/data_ela.rds")
 
 # plot --------------------------------------------------------------------
-
-g <- graph_from_adjacency_matrix(sA,
-                                 mode = "lower",
-                                 weighted = "weight")
-
-E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
-
-gnet <- ggraph::ggraph(g, layout = "circle") +
-  geom_edge_arc(aes(alpha = abs(weight),
-                    color = sign),
-                width = 1) +
-  coord_fixed() +
-  geom_node_point(size = 5) +
-  scale_edge_color_manual(values = c(`Plus` = "steelblue",
-                                     `Minus` = "salmon")) +
-  theme_void() +
-  theme(legend.title = element_text(size = 12),
-        legend.text = element_text(size = 10),
-        legend.key.size = unit(1, "cm"),
-        plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
-                             unit = "cm")) +
-  guides(edge_color = "none",
-         edge_alpha = "none")
-
-ggsave(gnet, filename = "output/fig_fish_network.pdf",
-       width = 10,
-       height = 8)
-
-
+# 
+# g <- graph_from_adjacency_matrix(sA,
+#                                  mode = "lower",
+#                                  weighted = "weight")
+# 
+# E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
+# 
+# gnet <- ggraph::ggraph(g, layout = "circle") +
+#   geom_edge_arc(aes(alpha = abs(weight),
+#                     color = sign),
+#                 width = 1) +
+#   coord_fixed() +
+#   geom_node_point(size = 5) +
+#   scale_edge_color_manual(values = c(`Plus` = "steelblue",
+#                                      `Minus` = "salmon")) +
+#   theme_void() +
+#   theme(legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 10),
+#         legend.key.size = unit(1, "cm"),
+#         plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
+#                              unit = "cm")) +
+#   guides(edge_color = "none",
+#          edge_alpha = "none")
+# 
+# ggsave(gnet, filename = "output/fig_fish_network.pdf",
+#        width = 10,
+#        height = 8)
+# 
+# 

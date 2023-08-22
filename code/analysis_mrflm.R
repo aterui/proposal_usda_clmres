@@ -100,7 +100,7 @@ diag(sA) <- o
 
 ## energy landscape: agriculture impact
 
-qs <- seq(0, 1, by = 0.05)
+qs <- seq(0.1, 0.9, length = 20)
 xq <- quantile(X[, "x_logit_agri"],
                qs)
 
@@ -117,7 +117,10 @@ cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
   m <- local_minima(N = length(sp), h = h, ncore = 8)
   
   message("gibbs sampling...")
-  trans <- gibbs(m = m, h = h, attempt = 50)
+  trans <- gibbs(m = m, h = h,
+                 attempt = 20,
+                 freq = 100,
+                 magnitude = 100)
   phi <- mean(trans$from == trans$to)
   
   return(list(id = u,
@@ -127,6 +130,13 @@ cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
               frac_agri = quantile(df_site$frac_agri, qs[u])))
 }
 
+saveRDS(cout, "output/data_phi.rds")
+
+cout %>% 
+  distinct(id, phi, frac_agri) %>% 
+  ggplot() +
+  geom_point(aes(y = phi,
+                 x = frac_agri))
 
 # subgraph ----------------------------------------------------------------
 # 

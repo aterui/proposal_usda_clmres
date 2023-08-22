@@ -82,13 +82,13 @@ diag(sA) <- o
 # energy landscape --------------------------------------------------------
 
 
-tictoc::tic()
-log_energy <- local_energy(N = length(sp), A = sA)
-tictoc::toc()
-
-tictoc::tic()
-m <- local_minima(N = length(sp), e = log_energy)
-tictoc::toc()
+# tictoc::tic()
+# h <- local_energy(N = length(sp), A = sA)
+# tictoc::toc()
+# 
+# tictoc::tic()
+# m <- local_minima(N = length(sp), h = h)
+# tictoc::toc()
 
 # tictoc::tic()
 # graph <- graph_from_data_frame(attr(m, "neighbor"), directed = FALSE)
@@ -100,19 +100,31 @@ tictoc::toc()
 
 ## energy landscape: agriculture impact
 
-xq <- quantile(X[, "x_logit_agri"], seq(0, 1, by = 0.1))
+qs <- seq(0, 1, by = 0.05)
+xq <- quantile(X[, "x_logit_agri"],
+               qs)
 
-cout <- foreach(agri = xq, .combine = bind_rows) %do% {
-  Xp <- c(1, 0, agri, 0)
+cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
+  print(u)
+  Xp <- c(1, 0, xq[u], 0)
   o <- drop(Xp %*% B)
   diag(sA) <- o
   
-  log_energy <- local_energy(N = length(sp), A = sA)
-  m <- local_minima(N = length(sp), e = log_energy)
+  message("calculating local energy...")
+  h <- local_energy(N = length(sp), A = sA, ncore = 8)
+
+  message("calculating local minima...")
+  m <- local_minima(N = length(sp), h = h, ncore = 8)
   
-  trans <- gibbs(m, log_energy)
+  message("gibbs sampling...")
+  trans <- gibbs(m = m, h = h, attempt = 50)
   phi <- mean(trans$from == trans$to)
-  return(list(phi = phi, n_state = length(m), energy_minima = log_energy[m]))
+  
+  return(list(id = u,
+              phi = phi,
+              n_state = length(m),
+              energy_minima = h[m],
+              frac_agri = quantile(df_site$frac_agri, qs[u])))
 }
 
 

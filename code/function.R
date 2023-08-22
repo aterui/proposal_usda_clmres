@@ -328,7 +328,7 @@ local_energy <- function(N, A, ncore = 4) {
   return(cout)
 }
 
-local_minima <- function(N, e, ncore = 4) {
+local_minima <- function(N, h, ncore = 4) {
   
   library(foreach)
   # possible number of community states
@@ -352,7 +352,7 @@ local_minima <- function(N, e, ncore = 4) {
                         x <- as.integer(intToBits(i)[1L:N]) * (-1L)
                         x[x == 0L] <- 1L
                         nei <- i + pw2 * x
-                        all(e[nei + 1L] > e[i + 1L])
+                        all(h[nei + 1L] > h[i + 1L])
                       })                        
                     }
   
@@ -420,10 +420,10 @@ gibbs <- function(m,
                                        org <- org
                                      }
                                      
-                                     print(paste(i, org,
-                                                 length(v_nei),
-                                                 paste0("p = ", round(p[index], 2)),
-                                                 sep = "; "))
+                                     # print(paste(i, org,
+                                     #             length(v_nei),
+                                     #             paste0("p = ", round(p[index], 2)),
+                                     #             sep = "; "))
                                      i <- i + 1
                                    }
                                    

@@ -382,3 +382,66 @@ local_minima <- function(N, e, ncore = 4) {
   
   return(index_min)
 }
+
+
+# gibbs sampling ----------------------------------------------------------
+
+gibbs <- function(m,
+                  h,
+                  attempt = 10,
+                  magnitude = 50,
+                  freq = 50) {
+  
+  dt_nei <- attributes(m)$neighbor
+  e <- exp(-h)
+  
+  list_out <- foreach(a = m,
+                      .combine = rbind) %do% {
+                        
+                        org <- a
+                        foreach (j = seq_len(attempt),
+                                 .combine = rbind) %do% {
+                                   
+                                   i <- 1
+                                   while(i <= freq) {
+                                     v_nei <- c(unlist(dt_nei[from == org, "to"]), 
+                                                unlist(dt_nei[to == org, "from"]))
+                                     names(v_nei) <- NULL
+                                     
+                                     p <- e[v_nei] / (e[v_nei] + e[org])
+                                     
+                                     index <- sample(x = length(p), size = magnitude, replace = T)
+                                     z <- rbinom(n = magnitude, size = 1, prob = p[index])
+                                     
+                                     if (any(z == 1)) {
+                                       trans_index <- index[min(which(z == 1))]
+                                       org <- v_nei[trans_index]
+                                     } else {
+                                       org <- org
+                                     }
+                                     
+                                     print(paste(i, org,
+                                                 length(v_nei),
+                                                 paste0("p = ", round(p[index], 2)),
+                                                 sep = "; "))
+                                     i <- i + 1
+                                   }
+                                   
+                                   x <- org
+                                   repeat {
+                                     v_nei <- c(unlist(dt_nei[from == x, "to"]), 
+                                                unlist(dt_nei[to == x, "from"]))
+                                     names(v_nei) <- NULL 
+                                     
+                                     if (all(h[v_nei] > h[x])) break
+                                     
+                                     x <- v_nei[which.min(h[v_nei] - h[x])]
+                                   }
+                                   
+                                   return(data.table(from = a, to = x))
+                                 }
+                      }
+  
+  return(list_out)   
+}
+

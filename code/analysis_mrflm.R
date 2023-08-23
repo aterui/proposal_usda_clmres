@@ -4,9 +4,11 @@ rm(list = ls()); gc()
 source("code/library.R")
 source("code/function.R")
 
+
+# data --------------------------------------------------------------------
+
 set.seed(122)
 df_site <- readRDS("data_fmt/data_mrb_site.rds") %>% 
-  #sample_n(size = 100) %>% 
   mutate(x_log_area = c(scale(log(area))),
          x_logit_agri = c(scale(boot::logit(frac_agri))),
          x_btw = c(scale(btw)))
@@ -22,7 +24,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > floor(nrow(df_site) * 0.2)) %>% 
+  filter(n > floor(nrow(df_site) * 0.25)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -72,18 +74,134 @@ for (i in 1:length(sp)) {
 }
 
 sA <- symmetrize(A, "min")
-
 Xp <- c(1, 0, 0, 0)
 o <- drop(Xp %*% B)
 diag(sA) <- o
 
+
 # energy landscape --------------------------------------------------------
 
-log_energy <- local_energy(N = length(sp), A = sA)
-m <- local_minima(N = length(sp), e = log_energy)
+
+# tictoc::tic()
+# h <- local_energy(N = length(sp), A = sA)
+# tictoc::toc()
+# 
+# tictoc::tic()
+# m <- local_minima(N = length(sp), h = h)
+# tictoc::toc()
+
+# tictoc::tic()
+# graph <- graph_from_data_frame(attr(m, "neighbor"), directed = FALSE)
+# tictoc::toc()
+
+# saveRDS(list(log_energy = log_energy, minima = m, graph = graph),
+#         "output/data_ela.rds")
 
 
-# plot --------------------------------------------------------------------
+## energy landscape: agriculture impact
+
+qs <- seq(0.1, 0.9, length = 20)
+xq <- quantile(X[, "x_logit_agri"],
+               qs)
+
+cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
+  print(u)
+  Xp <- c(1, 0, xq[u], 0)
+  o <- drop(Xp %*% B)
+  diag(sA) <- o
+  
+  message("calculating local energy...")
+  h <- local_energy(N = length(sp), A = sA, ncore = 8)
+  
+  message("calculating local minima...")
+  m <- local_minima(N = length(sp), h = h, ncore = 8)
+  
+  message("gibbs sampling...")
+  trans <- gibbs(m = m, h = h,
+                 attempt = 20,
+                 freq = 100,
+                 magnitude = 100)
+  phi <- mean(trans$from == trans$to)
+  
+  return(list(id = u,
+              phi = phi,
+              n_state = length(m),
+              energy_minima = h[m],
+              frac_agri = quantile(df_site$frac_agri, qs[u])))
+}
+
+saveRDS(cout, "output/data_phi.rds")
+
+cout %>% 
+  distinct(id, phi, frac_agri) %>% 
+  ggplot() +
+  geom_point(aes(y = phi,
+                 x = frac_agri))
+
+# subgraph ----------------------------------------------------------------
+# 
+# G <- readRDS("output/data_ela.rds")
+# 
+# minima <- G$minima
+# log_e <- G$log_energy
+# e <- exp(-log_e)
+# dt_nei <- attributes(minima)$neighbor
+# 
+# subv <- sapply(minima,
+#                function(x) {
+#                  v <- shortest_paths(G$graph,
+#                                      from = x,
+#                                      to = minima,
+#                                      mode = "out",
+#                                      output = "vpath") 
+#                  
+#                  unique(unlist(v$vpath))
+#                })
+# 
+# subv <- sort(unique(unlist(subv)))
+# 
+# subg <- subgraph(G$graph, vids = subv)
+# V(subg)$log_e <- log_e[subv]
+# V(subg)$minima <- as.numeric(names(V(subg))) %in% minima
+# V(subg)$richness <- sapply(as.numeric(layout$name),
+#                            function(x) sum(as.integer(intToBits(x - 1))))
+# 
+# lo <- create_layout(subg, layout = "linear")
+# min_id <- which(as.numeric(names(V(subg))) %in% minima)
+# 
+# lo$x[min_id] <- c(1, 10.5, 24, 52)
+# lo$y <- log_e[subv]
+# 
+# g_ela <- ggraph(lo) +
+#   geom_edge_link(alpha = 0.25) +
+#   geom_node_point(aes(color = richness,
+#                       shape = minima),
+#                   size = 7,
+#                   alpha = 0.75) +
+#   MetBrewer::scale_color_met_c("Hiroshige",
+#                                direction = -1) +
+#   labs(color = "Richness",
+#        y = "Community Energy E") +
+#   guides(shape = "none") +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 24),
+#         axis.text.y = element_text(size = 20),
+#         axis.line.x = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.line.x.bottom = element_blank(),
+#         axis.line.x.top = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         legend.text = element_text(size = 20),
+#         legend.title = element_text(size = 24),
+#         legend.key.size = unit(2, 'cm'),
+#         legend.position = c(0.2, 0.3))
+# 
+# ggsave(g_ela,
+#        filename = "output/fig_ela_mrb.pdf",
+#        height = 8, width = 9)
+# 
+# # plot --------------------------------------------------------------------
 # 
 # g <- graph_from_adjacency_matrix(sA,
 #                                  mode = "lower",
@@ -91,7 +209,8 @@ m <- local_minima(N = length(sp), e = log_energy)
 # 
 # E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
 # 
-# gnet <- ggraph::ggraph(g, layout = "circle") +
+# lo <- create_layout(g, layout = "linear", circular = TRUE)
+# gnet <- ggraph::ggraph(lo) +
 #   geom_edge_arc(aes(alpha = abs(weight),
 #                     color = sign),
 #                 width = 1) +
@@ -111,5 +230,5 @@ m <- local_minima(N = length(sp), e = log_energy)
 # ggsave(gnet, filename = "output/fig_fish_network.pdf",
 #        width = 10,
 #        height = 8)
-
-
+# 
+# 

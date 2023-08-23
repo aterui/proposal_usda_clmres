@@ -296,20 +296,28 @@ symmetrize <- function(X, method = "min") {
 # ela function ------------------------------------------------------------
 
 local_energy <- function(N, A, ncore = 4) {
-  pw2 <- as.integer(2L ^ (0L:(N - 1L)))
-  n_per_gr <- ceiling(2^N / ncore)
-  gr <- seq_len(2^N) %/% n_per_gr + 1
   
+  library(foreach)
+  # possible number of community states
+  K <- 2L ^ N
+  pw2 <- as.integer(2L ^ seq(0, N - 1, by = 1))
+  
+  n_per_gr <- floor(K / ncore)
+  gr <- seq_len(K) %/% n_per_gr + 1
+  gr <- sort(ifelse(gr > ncore, sample(ncore), gr))
+  
+  # parallel region
   cl <- parallel::makeCluster(ncore)
   doSNOW::registerDoSNOW(cl)
   
   cout <- foreach(g = 1L:max(gr),
                   .combine = c) %dopar% {
-                    index <- which(gr == g)
-                    sapply(index,
+                    
+                    int <- as.integer(which(gr == g) - 1)
+                    sapply(int,
                            function(i) {
                              x <- as.integer(intToBits(i)[1L:N])
-                             y <- -sum(drop(x %*% t(A * x)))
+                             y <- -sum(drop((A * x) %*% x))
                              return(y)
                            })
                   }
@@ -320,33 +328,120 @@ local_energy <- function(N, A, ncore = 4) {
   return(cout)
 }
 
-local_minima <- function(N, e, ncore = 4) {
+local_minima <- function(N, h, ncore = 4) {
   
   library(foreach)
+  # possible number of community states
+  K <- 2L ^ N
+  pw2 <- as.integer(2L ^ seq(0, N - 1, by = 1))
   
-  pw2 <- as.integer(2L ^ (0L:(N - 1L)))
-  n_per_gr <- floor((2L ^ N) / ncore)
-  gr <- (1:(2L ^ N - 1)) %/% n_per_gr + 1
+  n_per_gr <- floor(K / ncore)
+  gr <- seq_len(K) %/% n_per_gr + 1
+  gr <- sort(ifelse(gr > ncore, sample(ncore), gr))
   
+  # parallel region
   cl <- parallel::makeCluster(ncore)
   doSNOW::registerDoSNOW(cl)
   
-  cout <- foreach(g = 1L:max(gr),
-                  .combine = c) %dopar% {
-                    
-                    index <- which(gr == g)
-                    
-                    sapply(index, function(i) {
-                      x <- as.integer(intToBits(i)[1L:N]) * -1L
-                      x[x == 0L] <- 1L
-                      nei <- i + pw2 * x + 1
-                      all(e[nei] > e[i + 1L])
-                    })
-                    
-                  }
+  bl_min <- foreach(g = 1L:max(gr),
+                    .combine = c) %dopar% {
+                      
+                      int <- as.integer(which(gr == g) - 1)
+                      
+                      sapply(int, function(i) {
+                        x <- as.integer(intToBits(i)[1L:N]) * (-1L)
+                        x[x == 0L] <- 1L
+                        nei <- i + pw2 * x
+                        all(h[nei + 1L] > h[i + 1L])
+                      })                        
+                    }
+  
+  dt_nei <- foreach(g = 1L:max(gr),
+                    .combine = rbind) %dopar% {
+                      
+                      int <- as.integer(which(gr == g) - 1)
+                      
+                      v_nei <- c(sapply(int, function(i) {
+                        x <- as.integer(intToBits(i)[1L:N]) * (-1L)
+                        x[x == 0L] <- 1L
+                        nei <- i + pw2 * x + 1L
+                        return(nei)
+                      }))
+                      
+                      dt0 <- data.table::data.table(from = rep(int, each = N) + 1L,
+                                                    to = v_nei,
+                                                    int = rep(int, each = N))
+                      return(dt0[to > from, ])
+                    }
   
   parallel::stopCluster(cl)
   gc(); gc()
   
-  return(cout)
+  index_min <- which(bl_min == 1)
+  attributes(index_min)$neighbor <- dt_nei
+  
+  return(index_min)
 }
+
+
+# gibbs sampling ----------------------------------------------------------
+
+gibbs <- function(m,
+                  h,
+                  attempt = 10,
+                  magnitude = 50,
+                  freq = 50) {
+  
+  dt_nei <- attributes(m)$neighbor
+  e <- exp(-h)
+  
+  list_out <- foreach(a = m,
+                      .combine = rbind) %do% {
+                        
+                        org <- a
+                        foreach (j = seq_len(attempt),
+                                 .combine = rbind) %do% {
+                                   
+                                   i <- 1
+                                   while(i <= freq) {
+                                     v_nei <- c(unlist(dt_nei[from == org, "to"]), 
+                                                unlist(dt_nei[to == org, "from"]))
+                                     names(v_nei) <- NULL
+                                     
+                                     p <- e[v_nei] / (e[v_nei] + e[org])
+                                     
+                                     index <- sample(x = length(p), size = magnitude, replace = T)
+                                     z <- rbinom(n = magnitude, size = 1, prob = p[index])
+                                     
+                                     if (any(z == 1)) {
+                                       trans_index <- index[min(which(z == 1))]
+                                       org <- v_nei[trans_index]
+                                     } else {
+                                       org <- org
+                                     }
+                                     
+                                     # print(paste(i, org,
+                                     #             length(v_nei),
+                                     #             paste0("p = ", round(p[index], 2)),
+                                     #             sep = "; "))
+                                     i <- i + 1
+                                   }
+                                   
+                                   x <- org
+                                   repeat {
+                                     v_nei <- c(unlist(dt_nei[from == x, "to"]), 
+                                                unlist(dt_nei[to == x, "from"]))
+                                     names(v_nei) <- NULL 
+                                     
+                                     if (all(h[v_nei] > h[x])) break
+                                     
+                                     x <- v_nei[which.min(h[v_nei] - h[x])]
+                                   }
+                                   
+                                   return(data.table(from = a, to = x))
+                                 }
+                      }
+  
+  return(list_out)   
+}
+

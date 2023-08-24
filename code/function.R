@@ -383,64 +383,145 @@ local_minima <- function(N, h, ncore = 4) {
   return(index_min)
 }
 
+tipping <- function(N, h, ncore = 4) {
+  # possible number of community states
+  K <- 2L ^ N
+  pw2 <- as.integer(2L ^ seq(0, N - 1, by = 1))
+  
+  n_per_gr <- floor(K / ncore)
+  gr <- seq_len(K) %/% n_per_gr + 1
+  gr <- sort(ifelse(gr > ncore, sample(ncore), gr))
+  
+  # parallel region
+  cl <- parallel::makeCluster(ncore)
+  doSNOW::registerDoSNOW(cl)
+  
+  ## neg2: T/F node with >= 2 negative gap neighbors
+  neg2 <- foreach(g = 1L:max(gr),
+                  .combine = c) %dopar% {
+                    
+                    int <- as.integer(which(gr == g) - 1)
+                    
+                    sapply(int, function(i) {
+                      x <- as.integer(intToBits(i)[1L:N]) * (-1L)
+                      x[x == 0L] <- 1L
+                      nei <- i + pw2 * x
+                      sum(h[nei + 1L] < h[i + 1L]) > 1
+                    })                        
+                  }  
+  
+  # tipping points
+  ## convert neg2 index to integer
+  int <- which(neg2) - 1
+  dt_to <- foreach(k = int,
+                   .combine = rbind) %dopar% {
+    
+    ### identify nodes with negative gradients
+    x <- as.integer(intToBits(k)[1L:N]) * (-1L)
+    x[x == 0L] <- 1L
+    nb0 <- k + pw2 * x
+    int_neg <- nb0[h[nb0 + 1] < h[k + 1]]
+    
+    ### identify ultimate local minima
+    to <- sapply(int_neg, function(i) {
+      repeat {
+        x <- as.integer(intToBits(i)[1L:N]) * (-1L)
+        x[x == 0L] <- 1L
+        nei0 <- i + pw2 * x
+        h_nei <- h[nei0 + 1]
+        h_i <- h[i + 1]
+        if (all(h_nei > h_i)) break
+        i <- nei0[which.min(h_nei)]
+      }
+      return(i + 1)
+    })
+    
+    return(data.table::data.table(node = k + 1,
+                                  n_to = length(unique(to)),
+                                  to = unique(to),
+                                  h_ridge = h[k + 1],
+                                  h_minima = h[unique(to)])
+           )
+  }
+  
+  parallel::stopCluster(cl)
+  gc(); gc()
+    
+  return(dt_to)
+}
+
 
 # gibbs sampling ----------------------------------------------------------
 
-gibbs <- function(m,
+gibbs <- function(s,
                   h,
+                  neighbor,
                   attempt = 10,
-                  magnitude = 50,
-                  freq = 50) {
+                  magnitude = 1,
+                  freq = 10) {
   
-  dt_nei <- attributes(m)$neighbor
+  dt_nei <- neighbor
   e <- exp(-h)
   
-  list_out <- foreach(a = m,
-                      .combine = rbind) %do% {
-                        
-                        org <- a
-                        foreach (j = seq_len(attempt),
-                                 .combine = rbind) %do% {
-                                   
-                                   i <- 1
-                                   while(i <= freq) {
-                                     v_nei <- c(unlist(dt_nei[from == org, "to"]), 
-                                                unlist(dt_nei[to == org, "from"]))
-                                     names(v_nei) <- NULL
-                                     
-                                     p <- e[v_nei] / (e[v_nei] + e[org])
-                                     
-                                     index <- sample(x = length(p), size = magnitude, replace = T)
-                                     z <- rbinom(n = magnitude, size = 1, prob = p[index])
-                                     
-                                     if (any(z == 1)) {
-                                       trans_index <- index[min(which(z == 1))]
-                                       org <- v_nei[trans_index]
-                                     } else {
-                                       org <- org
-                                     }
-                                     
-                                     # print(paste(i, org,
-                                     #             length(v_nei),
-                                     #             paste0("p = ", round(p[index], 2)),
-                                     #             sep = "; "))
-                                     i <- i + 1
-                                   }
-                                   
-                                   x <- org
-                                   repeat {
-                                     v_nei <- c(unlist(dt_nei[from == x, "to"]), 
-                                                unlist(dt_nei[to == x, "from"]))
-                                     names(v_nei) <- NULL 
-                                     
-                                     if (all(h[v_nei] > h[x])) break
-                                     
-                                     x <- v_nei[which.min(h[v_nei] - h[x])]
-                                   }
-                                   
-                                   return(data.table(from = a, to = x))
-                                 }
-                      }
+  list_out <- foreach(s = s, .combine = rbind) %do% {
+    
+    # initial basin of attraction
+    m <- s
+    repeat {
+      v_nei <- c(unlist(dt_nei[from == m, "to"],
+                        use.names = FALSE), 
+                 unlist(dt_nei[to == m, "from"],
+                        use.names = FALSE)
+                 )
+      if (all(h[v_nei] > h[m])) break
+      m <- v_nei[which.min(h[v_nei] - h[m])]
+    }
+    minima <- m
+    
+    # perturbation attempts    
+    org <- s
+    foreach (j = seq_len(attempt),
+             .combine = rbind) %do% {
+               
+               i <- 1
+               while(i <= freq) {
+                 v_nei <- c(unlist(dt_nei[from == org, "to"],
+                                   use.names = FALSE), 
+                            unlist(dt_nei[to == org, "from"],
+                                   use.names = FALSE)
+                            )
+                 
+                 p <- e[v_nei] / (e[v_nei] + e[org])
+                 
+                 index <- sample(x = length(p), size = magnitude, replace = T)
+                 z <- rbinom(n = magnitude, size = 1, prob = p[index])
+                 
+                 if (any(z == 1)) {
+                   trans_index <- index[min(which(z == 1))]
+                   org <- v_nei[trans_index]
+                 } else {
+                   org <- org
+                 }
+                 
+                 i <- i + 1
+               }
+               
+               x <- org
+               repeat {
+                 v_nei <- c(unlist(dt_nei[from == x, "to"]), 
+                            unlist(dt_nei[to == x, "from"]))
+                 names(v_nei) <- NULL 
+                 
+                 if (all(h[v_nei] > h[x])) break
+                 
+                 x <- v_nei[which.min(h[v_nei] - h[x])]
+               }
+               
+               return(data.table(initial_state = s,
+                                 minima_from = minima,
+                                 minima_to = x))
+             }
+  }
   
   return(list_out)   
 }

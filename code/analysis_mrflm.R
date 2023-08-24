@@ -100,9 +100,8 @@ diag(sA) <- o
 
 ## energy landscape: agriculture impact
 
-qs <- seq(0.1, 0.9, length = 20)
-xq <- quantile(X[, "x_logit_agri"],
-               qs)
+v_x <- seq(0.05, 0.95, length = 10)
+xq <- (boot::logit(v_x) - mean(boot::logit(df_site$frac_agri))) / sd(boot::logit(df_site$frac_agri))
 
 cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
   print(u)
@@ -111,32 +110,65 @@ cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
   diag(sA) <- o
   
   message("calculating local energy...")
-  h <- local_energy(N = length(sp), A = sA, ncore = 8)
+  h <- local_energy(N = length(sp), A = sA, ncore = 10)
   
   message("calculating local minima...")
-  m <- local_minima(N = length(sp), h = h, ncore = 8)
+  m <- local_minima(N = length(sp), h = h, ncore = 10)
+  mu_gap <- mean(abs(h - min(h[m])))
   
-  message("gibbs sampling...")
-  trans <- gibbs(m = m, h = h,
-                 attempt = 20,
-                 freq = 100,
-                 magnitude = 100)
-  phi <- mean(trans$from == trans$to)
+  message("calculating tipping points...")
+  dt_tip <- tipping(N = length(sp), h = h, ncore = 10)
+  dt_tip <- dt_tip[n_to > 1,]
+  phi <- mean(dt_tip$h_ridge - dt_tip$h_minima)
   
-  return(list(id = u,
-              phi = phi,
-              n_state = length(m),
-              energy_minima = h[m],
-              frac_agri = quantile(df_site$frac_agri, qs[u])))
+  list_out <- list(id = u,
+                   mu_gap = mu_gap,
+                   phi = phi,
+                   n_minima = length(m),
+                   frac_agri = v_x[u],
+                   minima = list(c(m)),
+                   minma_energy = list(h[m]))
+  
+  # message("gibbs sampling...")
+  # trans <- gibbs(s = m,
+  #                h = h,
+  #                neighbor = attributes(m)$neighbor,
+  #                attempt = 10,
+  #                freq = 50,
+  #                magnitude = 1000)
+  # 
+  # trans$z <- ifelse(trans$minima_from == trans$minima_to, 1, 0)
+  # v_phi <- tapply(trans$z, trans$initial_state, mean)
+  # 
+  # list_out <- list(id = u,
+  #                  phi = v_phi,
+  #                  n_minima = length(m),
+  #                  frac_agri = v_x[u],
+  #                  minima = list(c(m)),
+  #                  minma_energy = list(h[m]))
+  
+  return(list_out)
 }
 
 saveRDS(cout, "output/data_phi.rds")
 
-cout %>% 
-  distinct(id, phi, frac_agri) %>% 
-  ggplot() +
-  geom_point(aes(y = phi,
-                 x = frac_agri))
+g_phi <- cout %>%
+  group_by(id) %>%
+  summarize(phi = mean(phi),
+            frac_agri = unique(frac_agri)) %>%
+  ggplot(aes(y = phi,
+             x = frac_agri * 100)) +
+  geom_point(size = 4) +
+  geom_line() +
+  labs(y = expression("Resilience"~~phi),
+       x = "% Agriculture") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = 25))
+
+ggsave(g_phi,
+       filename = "output/fig_phi.pdf",
+       width = 6, height = 5)
 
 # subgraph ----------------------------------------------------------------
 # 
@@ -153,8 +185,8 @@ cout %>%
 #                                      from = x,
 #                                      to = minima,
 #                                      mode = "out",
-#                                      output = "vpath") 
-#                  
+#                                      output = "vpath")
+# 
 #                  unique(unlist(v$vpath))
 #                })
 # 
@@ -163,13 +195,13 @@ cout %>%
 # subg <- subgraph(G$graph, vids = subv)
 # V(subg)$log_e <- log_e[subv]
 # V(subg)$minima <- as.numeric(names(V(subg))) %in% minima
-# V(subg)$richness <- sapply(as.numeric(layout$name),
+# V(subg)$richness <- sapply(as.numeric(names(V(subg))),
 #                            function(x) sum(as.integer(intToBits(x - 1))))
 # 
 # lo <- create_layout(subg, layout = "linear")
 # min_id <- which(as.numeric(names(V(subg))) %in% minima)
 # 
-# lo$x[min_id] <- c(1, 10.5, 24, 52)
+# lo$x <- V(subg)$richness
 # lo$y <- log_e[subv]
 # 
 # g_ela <- ggraph(lo) +

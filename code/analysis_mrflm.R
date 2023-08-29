@@ -119,7 +119,18 @@ cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
   message("calculating tipping points...")
   dt_tip <- tipping(N = length(sp), h = h, ncore = 10)
   dt_tip <- dt_tip[n_to > 1,]
-  phi <- mean(dt_tip$h_ridge - dt_tip$h_minima)
+  dt_tip$gap <- dt_tip$h_ridge - dt_tip$h_minima
+  
+  combo <- combn(m, 2)
+  height <- sapply(seq_len(ncol(combo)), function(v) {
+    x <- combo[, v]
+    dt_sub <- dt_tip[to %in% x,]
+    ridges <- as.numeric(names(which(table(dt_sub$node) == 2)))
+    dt_ridge <- dt_sub[node %in% ridges,]
+    tapply(dt_ridge$gap, dt_ridge$to, min)
+  })
+  
+  phi <- mean(height)
   
   list_out <- list(id = u,
                    mu_gap = mu_gap,
@@ -233,34 +244,34 @@ ggsave(g_phi,
 #        filename = "output/fig_ela_mrb.pdf",
 #        height = 8, width = 9)
 # 
-# # plot --------------------------------------------------------------------
-# 
-# g <- graph_from_adjacency_matrix(sA,
-#                                  mode = "lower",
-#                                  weighted = "weight")
-# 
-# E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
-# 
-# lo <- create_layout(g, layout = "linear", circular = TRUE)
-# gnet <- ggraph::ggraph(lo) +
-#   geom_edge_arc(aes(alpha = abs(weight),
-#                     color = sign),
-#                 width = 1) +
-#   coord_fixed() +
-#   geom_node_point(size = 5) +
-#   scale_edge_color_manual(values = c(`Plus` = "steelblue",
-#                                      `Minus` = "salmon")) +
-#   theme_void() +
-#   theme(legend.title = element_text(size = 12),
-#         legend.text = element_text(size = 10),
-#         legend.key.size = unit(1, "cm"),
-#         plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
-#                              unit = "cm")) +
-#   guides(edge_color = "none",
-#          edge_alpha = "none")
-# 
-# ggsave(gnet, filename = "output/fig_fish_network.pdf",
-#        width = 10,
-#        height = 8)
-# 
-# 
+# plot --------------------------------------------------------------------
+
+g <- graph_from_adjacency_matrix(sA,
+                                 mode = "lower",
+                                 weighted = "weight")
+
+E(g)$sign <- ifelse(E(g)$weight > 0, "Plus", "Minus")
+
+lo <- create_layout(g, layout = "linear", circular = TRUE)
+gnet <- ggraph::ggraph(lo) +
+  geom_edge_arc(aes(alpha = abs(weight),
+                    color = sign),
+                width = 1) +
+  coord_fixed() +
+  geom_node_point(size = 5) +
+  scale_edge_color_manual(values = c(`Plus` = "steelblue",
+                                     `Minus` = "salmon")) +
+  theme_void() +
+  theme(legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "cm"),
+        plot.margin = margin(t = 1, r = 1, b = 1, l = 1,
+                             unit = "cm")) +
+  guides(edge_color = "none",
+         edge_alpha = "none")
+
+ggsave(gnet, filename = "output/fig_fish_network.pdf",
+       width = 10,
+       height = 8)
+
+

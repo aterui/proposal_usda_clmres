@@ -104,8 +104,8 @@ watershed <- function(str_grid,
   files <- list.files(tempdir(), full.names = T)
   cl <- call("file.remove", files)
   bools <- suppressWarnings(eval(cl, envir = parent.frame()))
-  message(paste0("Following files were removed from a temporary dirctory: ",
-                 files[bools]))
+  # message(paste0("Following files were removed from a temporary dirctory: ",
+  #                files[bools]))
 }
 
 # arc2d8 ------------------------------------------------------------------
@@ -278,13 +278,16 @@ symmetrize <- function(X, method = "min") {
   u <- tX[lower.tri(tX)]
   
   if (method == "mean")
-    y <- apply(cbind(l, u), MARGIN = 1, FUN = mean)
+    y <- apply(cbind(l, u), MARGIN = 1,
+               FUN = mean)
   
   if (method == "min")
-    y <- apply(cbind(l, u), MARGIN = 1, FUN = function(x) x[which.min(abs(x))])
+    y <- apply(cbind(l, u), MARGIN = 1,
+               FUN = function(x) x[which.min(abs(x))])
   
   if (method == "max")
-    y <- apply(cbind(l, u), MARGIN = 1, FUN = function(x) x[which.max(abs(x))])
+    y <- apply(cbind(l, u), MARGIN = 1,
+               FUN = function(x) x[which.max(abs(x))])
   
   M <- matrix(0, nrow = dim(X)[1], ncol = dim(X)[2])
   M[lower.tri(M)] <- y

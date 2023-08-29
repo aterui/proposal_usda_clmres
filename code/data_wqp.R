@@ -37,8 +37,8 @@ wgs84_mrb <- st_read(here::here("data_raw/epsg4269_huc4_mrb.gpkg")) %>%
 # nutrient data
 df_nu0 <- readWQPdata(characteristicType = "Nutrient",
                       bBox = as.vector(st_bbox(wgs84_mrb)),
-                      startDateLo = "2010-01-01",
-                      startDateHigh = "2010-12-31",
+                      startDateLo = "2000-01-01",
+                      startDateHigh = "2020-12-31",
                       convertType = FALSE)
 
 df_nu <- df_nu0 %>% 

@@ -22,7 +22,7 @@ df_fish <- df_fish %>%
 sp <- df_fish %>% 
   group_by(species) %>% 
   summarize(n = sum(presence)) %>% 
-  filter(n > floor(nrow(df_site) * 0.2)) %>% 
+  filter(n > floor(nrow(df_site) * 0.25)) %>% 
   pull(species)
 
 Y <- df_fish %>% 
@@ -107,11 +107,11 @@ fm <- lm(log(fecundity) ~ log(maxtl),
 df_plot <- df_plot %>% 
   mutate(fec = resid(fm))
 
-MASS::rlm(V3 ~ fec + log(maxtl) + lithophils + substrate,
+MASS::rlm(V3 ~ fec + log(maxtl) + lithophils + substrate + primary_consumer,
           df_plot) %>% 
   summary()
 
 df_plot %>% 
-  ggplot(aes(y = maxtl,
-             x = primary_consumer)) +
+  ggplot(aes(y = V3,
+             x = log(maxtl))) +
   geom_point()

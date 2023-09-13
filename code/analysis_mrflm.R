@@ -182,68 +182,70 @@ ggsave(g_phi,
        width = 6, height = 5)
 
 # subgraph ----------------------------------------------------------------
-# 
-# G <- readRDS("output/data_ela.rds")
-# 
-# minima <- G$minima
-# log_e <- G$log_energy
-# e <- exp(-log_e)
-# dt_nei <- attributes(minima)$neighbor
-# 
-# subv <- sapply(minima,
-#                function(x) {
-#                  v <- shortest_paths(G$graph,
-#                                      from = x,
-#                                      to = minima,
-#                                      mode = "out",
-#                                      output = "vpath")
-# 
-#                  unique(unlist(v$vpath))
-#                })
-# 
-# subv <- sort(unique(unlist(subv)))
-# 
-# subg <- subgraph(G$graph, vids = subv)
-# V(subg)$log_e <- log_e[subv]
-# V(subg)$minima <- as.numeric(names(V(subg))) %in% minima
-# V(subg)$richness <- sapply(as.numeric(names(V(subg))),
-#                            function(x) sum(as.integer(intToBits(x - 1))))
-# 
-# lo <- create_layout(subg, layout = "linear")
-# min_id <- which(as.numeric(names(V(subg))) %in% minima)
-# 
-# lo$x <- V(subg)$richness
-# lo$y <- log_e[subv]
-# 
-# g_ela <- ggraph(lo) +
-#   geom_edge_link(alpha = 0.25) +
-#   geom_node_point(aes(color = richness,
-#                       shape = minima),
-#                   size = 7,
-#                   alpha = 0.75) +
-#   MetBrewer::scale_color_met_c("Hiroshige",
-#                                direction = -1) +
-#   labs(color = "Richness",
-#        y = "Community Energy E") +
-#   guides(shape = "none") +
-#   theme_classic() +
-#   theme(axis.title.y = element_text(size = 24),
-#         axis.text.y = element_text(size = 20),
-#         axis.line.x = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.line.x.bottom = element_blank(),
-#         axis.line.x.top = element_blank(),
-#         axis.ticks.x = element_blank(),
-#         axis.text.x = element_blank(),
-#         legend.text = element_text(size = 20),
-#         legend.title = element_text(size = 24),
-#         legend.key.size = unit(2, 'cm'),
-#         legend.position = c(0.2, 0.3))
-# 
-# ggsave(g_ela,
-#        filename = "output/fig_ela_mrb.pdf",
-#        height = 8, width = 9)
-# 
+
+G <- readRDS("output/data_ela.rds")
+
+minima <- G$minima
+log_e <- G$log_energy
+e <- exp(-log_e)
+dt_nei <- attributes(minima)$neighbor
+
+subv <- sapply(minima,
+               function(x) {
+                 v <- shortest_paths(G$graph,
+                                     from = x,
+                                     to = minima,
+                                     mode = "out",
+                                     output = "vpath")
+
+                 unique(unlist(v$vpath))
+               })
+
+subv <- sort(unique(unlist(subv)))
+
+subg <- subgraph(G$graph, vids = subv)
+V(subg)$log_e <- log_e[subv]
+V(subg)$minima <- as.numeric(names(V(subg))) %in% minima
+V(subg)$richness <- sapply(as.numeric(names(V(subg))),
+                           function(x) sum(as.integer(intToBits(x - 1))))
+
+lo <- create_layout(subg, layout = "linear")
+min_id <- which(as.numeric(names(V(subg))) %in% minima)
+
+lo$x <- V(subg)$richness
+lo$y <- log_e[subv]
+
+g_ela <- ggraph(lo) +
+  geom_edge_link(alpha = 0.45) +
+  geom_node_point(aes(color = richness,
+                      size = minima),
+                  alpha = 0.75) +
+  scale_size_manual(values = c(`TRUE` = 7,
+                               `FALSE` = 3)) +
+  MetBrewer::scale_color_met_c("Hiroshige",
+                               direction = -1) +
+  labs(color = "Richness",
+       y = "Community energy E") +
+  guides(shape = "none",
+         size = "none") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 30),
+        axis.text.y = element_text(size = 26),
+        axis.line.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.line.x.bottom = element_blank(),
+        axis.line.x.top = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text = element_text(size = 22),
+        legend.title = element_text(size = 26),
+        legend.key.size = unit(1, 'cm'),
+        legend.position = c(0.2, 0.3))
+
+ggsave(g_ela,
+       filename = "output/fig_ela_mrb.pdf",
+       height = 7, width = 8)
+
 # plot --------------------------------------------------------------------
 
 g <- graph_from_adjacency_matrix(sA,

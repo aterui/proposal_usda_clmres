@@ -16,11 +16,11 @@ root <- here::here() %>%
 wgs84_sr_strg <- terra::rast("data_raw/epsg4326_stream_grid_50sqkm.tif")
 
 ### dir: flow direction
-wgs84_sr_dir <- terra::rast("F:/github/priv-proj_midwest-gis/data_gis/epsg4326_dir.tif") %>% 
+wgs84_sr_dir <- terra::rast("E:/github/priv-proj_midwest-gis/data_gis/epsg4326_dir.tif") %>% 
   arc2d8()
 
 ### upa: upstream drainage area
-wgs84_sr_upa <- terra::rast("F:/github/priv-proj_midwest-gis/data_gis/epsg4326_upa.tif")
+wgs84_sr_upa <- terra::rast("E:/github/priv-proj_midwest-gis/data_gis/epsg4326_upa.tif")
 
 ### sf_mask: mask layer
 wgs84_sf_mask <- st_read(here::here("data_raw/epsg4269_huc4_mrb.gpkg")) %>% 
@@ -62,8 +62,7 @@ albers_sf_str_buff <- wgs84_sf_str %>%
 ### wgs84_sf_tp: vector point for TP sampling
 set.seed(111)
 wgs84_sf_tp <- readRDS(here::here("data_raw/data_np.rds")) %>% 
-  filter(characteristic %in% c("TP"),
-         between(date, as.Date("2010-01-01"), as.Date("2015-12-31"))) %>% 
+  filter(characteristic %in% c("Phosphorus", "Total Phosphorus, mixed forms")) %>% 
   arrange(date) %>% 
   dplyr::select(-c(activity_id, value_raw, value_raw_unit)) %>% 
   mutate(unique_site = paste(round(lon, 2), round(lat, 2))) %>% 
@@ -76,7 +75,7 @@ wgs84_sf_tp <- readRDS(here::here("data_raw/data_np.rds")) %>%
   st_join(st_transform(wgs84_sf_mask0, crs = 5070)) %>% 
   drop_na(starts_with("id.")) %>% 
   dplyr::select(-starts_with("id.")) %>% 
-  sample_n(size = 250) %>% 
+  sample_n(size = 200) %>% 
   mutate(site_id = row_number()) %>% 
   st_as_sf() %>% 
   st_transform(4326)
@@ -84,30 +83,62 @@ wgs84_sf_tp <- readRDS(here::here("data_raw/data_np.rds")) %>%
 saveRDS(wgs84_sf_tp %>% as_tibble(),
         here::here("data_fmt/data_tp_sub.rds"))
 
+# save to tempdir() -------------------------------------------------------
 
-# delineate watershed -----------------------------------------------------
+v_name <- tempdir() %>% 
+  paste(c("strg.tif",
+          "outlet.shp",
+          "outlet_snap.shp",
+          "upa.tif",
+          "dir.tif",
+          "wsd.tif"),
+        sep = "\\")
 
-watershed(str_grid = wgs84_sr_strg,
-          f_dir = wgs84_sr_dir,
-          f_acc = wgs84_sr_upa,
-          outlet = wgs84_sf_tp,
-          output_dir = "data_fmt",
-          filename = "epsg4326_wsd",
-          keep_outlet = TRUE)
+terra::writeRaster(wgs84_sr_strg,
+                   filename = v_name[str_detect(v_name, "strg")],
+                   overwrite = TRUE)
+
+terra::writeRaster(wgs84_sr_dir,
+                   filename = v_name[str_detect(v_name, "dir")],
+                   overwrite = TRUE)
+
+terra::writeRaster(wgs84_sr_upa,
+                   filename = v_name[str_detect(v_name, "upa")],
+                   overwrite = TRUE)
+
+# wbt_extract_streams(flow_accum = v_name[str_detect(v_name, "upa")],
+#                     output = v_name[str_detect(v_name, "strg")],
+#                     threshold = 50)
+# 
+# x <- terra::rast(v_name[str_detect(v_name, "strg")])
+# terra::writeRaster(x, filename = here::here("data_raw/epsg4326_stream_grid_50sqkm.tif"))
+# 
+# wbt_raster_streams_to_vector(streams = v_name[str_detect(v_name, "strg")],
+#                              d8_pntr = v_name[str_detect(v_name, "dir")],
+#                              output = "data_raw/epsg4326_channel_50sqkm.shp")
+
+st_write(wgs84_sf_tp,
+         dsn = v_name[str_detect(v_name, "outlet.shp")],
+         append = FALSE)
+
+list.files(tempdir(), full.names = T)
 
 
 # gis ---------------------------------------------------------------------
 
-## retrieve snapped wq sampling sites
-wgs84_sf_tp_snap <- st_read(dsn = "data_fmt/outlet_snap.gpkg")
+## pour point snap
+wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
+                            streams = v_name[str_detect(v_name, "strg")],
+                            output = v_name[str_detect(v_name, "outlet_snap")],
+                            snap_dist = 2)
 
-## blend outlet points into stream networks
+wgs84_sf_tp_snap <- st_read(dsn = v_name[str_detect(v_name, "outlet_snap")])
+
 wgs84_sfnet <- as_sfnetwork(wgs84_sf_str, directed = FALSE)
 wgs84_sfnet %>%
   activate(edges) %>% 
   st_as_sf() %>% 
-  st_write("data_fmt/epsg4326_str_mrb_raw.gpkg",
-           append = FALSE)
+  st_write("data_fmt/epsg4326_str_mrb_raw.gpkg")
 
 wgs84_sfnetb <- st_network_blend(wgs84_sfnet, wgs84_sf_tp_snap) %>%
   activate(edges) %>%
@@ -124,7 +155,7 @@ wgs84_sfnetb <- st_network_blend(wgs84_sfnet, wgs84_sf_tp_snap) %>%
   ungroup() %>% 
   arrange(node_id)
 
-## save the blended network
+## network
 wgs84_sfnetb %>%
   activate(edges) %>%
   as_tibble() %>%
@@ -132,10 +163,50 @@ wgs84_sfnetb %>%
   st_write(here::here("data_fmt/epsg4326_str_mrb.gpkg"),
            append = FALSE)
 
-# wgs84_sf_tp_snap <- wgs84_sfnetb %>% 
-#   activate(nodes) %>% 
-#   as_tibble() %>% 
-#   mutate(node_id = row_number())
+wgs84_sf_tp_snap <- wgs84_sfnetb %>% 
+  activate(nodes) %>% 
+  as_tibble() %>% 
+  mutate(node_id = row_number())
+
+st_write(wgs84_sf_tp_snap,
+         dsn = v_name[str_detect(v_name, "outlet_snap")],
+         append = FALSE)
+
+st_write(wgs84_sf_tp_snap,
+         dsn = here::here("data_fmt/epsg4326_point_snap.gpkg"),
+         append = FALSE)
+
+## watershed delineation
+wbt_unnest_basins(d8_pntr = v_name[str_detect(v_name, "dir")],
+                  pour_pts = v_name[str_detect(v_name, "outlet_snap")],
+                  output = v_name[str_detect(v_name, "wsd")])
+
+wgs84_sf_wsd <- list.files(path = tempdir(),
+                           pattern = "wsd",
+                           full.names = TRUE) %>% 
+  lapply(terra::rast) %>% 
+  lapply(stars::st_as_stars) %>% 
+  lapply(sf::st_as_sf,
+         merge = TRUE,
+         as_points = FALSE) %>%
+  bind_rows() %>% 
+  st_transform(crs = 5070) %>% 
+  rowwise() %>% 
+  mutate(node_id = sum(c_across(cols = ends_with("tif")),
+                       na.rm = TRUE)) %>% 
+  dplyr::select(node_id) %>% 
+  ungroup() %>% 
+  mutate(area = units::set_units(st_area(.), "km^2")) %>% 
+  group_by(node_id) %>% 
+  slice(which.max(area)) %>% # remove duplicates by outlet
+  ungroup() %>% 
+  relocate(node_id, area) %>% 
+  arrange(node_id) %>% 
+  st_transform(crs = 4326)
+
+st_write(wgs84_sf_wsd,
+         dsn = here::here("data_fmt/epsg4326_wsd.gpkg"),
+         append = FALSE)
 
 ## distance
 root_id <- 35 # root node id; currently manual check with QGIS
@@ -195,3 +266,8 @@ saveRDS(df_dist, here::here("data_fmt/data_distance.rds"))
 #             st_as_sf() %>% 
 #             filter(edge_id %in% 1:100),
 #           color = "red")
+  
+
+# clean tempdir() ---------------------------------------------------------
+
+file.remove(list.files(tempdir(), full.names = T))

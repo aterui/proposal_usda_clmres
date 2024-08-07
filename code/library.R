@@ -8,4 +8,9 @@ pacman::p_load(sf,
                tidygraph,
                igraph,
                sfnetworks,
-               exactextractr)
+               exactextractr,
+               vegan,
+               ggraph,
+               foreach,
+               glmnet,
+               data.table)

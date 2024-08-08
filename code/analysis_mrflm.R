@@ -82,104 +82,104 @@ diag(sA) <- o
 # energy landscape --------------------------------------------------------
 
 
-# tictoc::tic()
-# h <- local_energy(N = length(sp), A = sA)
-# tictoc::toc()
-# 
-# tictoc::tic()
-# m <- local_minima(N = length(sp), h = h)
-# tictoc::toc()
+tictoc::tic()
+h <- local_energy(N = length(sp), A = sA)
+tictoc::toc()
 
-# tictoc::tic()
-# graph <- graph_from_data_frame(attr(m, "neighbor"), directed = FALSE)
-# tictoc::toc()
+tictoc::tic()
+m <- local_minima(N = length(sp), h = h)
+tictoc::toc()
+
+tictoc::tic()
+graph <- graph_from_data_frame(attr(m, "neighbor"), directed = FALSE)
+tictoc::toc()
 
 # saveRDS(list(log_energy = log_energy, minima = m, graph = graph),
 #         "output/data_ela.rds")
 
 
-## energy landscape: agriculture impact
-
-v_x <- seq(0.05, 0.95, length = 10)
-xq <- (boot::logit(v_x) - mean(boot::logit(df_site$frac_agri))) / sd(boot::logit(df_site$frac_agri))
-
-cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
-  print(u)
-  Xp <- c(1, 0, xq[u], 0)
-  o <- drop(Xp %*% B)
-  diag(sA) <- o
-  
-  message("calculating local energy...")
-  h <- local_energy(N = length(sp), A = sA, ncore = 10)
-  
-  message("calculating local minima...")
-  m <- local_minima(N = length(sp), h = h, ncore = 10)
-  mu_gap <- mean(abs(h - min(h[m])))
-  
-  message("calculating tipping points...")
-  dt_tip <- tipping(N = length(sp), h = h, ncore = 10)
-  dt_tip <- dt_tip[n_to > 1,]
-  dt_tip$gap <- dt_tip$h_ridge - dt_tip$h_minima
-  
-  combo <- combn(m, 2)
-  height <- sapply(seq_len(ncol(combo)), function(v) {
-    x <- combo[, v]
-    dt_sub <- dt_tip[to %in% x,]
-    ridges <- as.numeric(names(which(table(dt_sub$node) == 2)))
-    dt_ridge <- dt_sub[node %in% ridges,]
-    tapply(dt_ridge$gap, dt_ridge$to, min)
-  })
-  
-  phi <- mean(height)
-  
-  list_out <- list(id = u,
-                   mu_gap = mu_gap,
-                   phi = phi,
-                   n_minima = length(m),
-                   frac_agri = v_x[u],
-                   minima = list(c(m)),
-                   minma_energy = list(h[m]))
-  
-  # message("gibbs sampling...")
-  # trans <- gibbs(s = m,
-  #                h = h,
-  #                neighbor = attributes(m)$neighbor,
-  #                attempt = 10,
-  #                freq = 50,
-  #                magnitude = 1000)
-  # 
-  # trans$z <- ifelse(trans$minima_from == trans$minima_to, 1, 0)
-  # v_phi <- tapply(trans$z, trans$initial_state, mean)
-  # 
-  # list_out <- list(id = u,
-  #                  phi = v_phi,
-  #                  n_minima = length(m),
-  #                  frac_agri = v_x[u],
-  #                  minima = list(c(m)),
-  #                  minma_energy = list(h[m]))
-  
-  return(list_out)
-}
-
-saveRDS(cout, "output/data_phi.rds")
-
-g_phi <- cout %>%
-  group_by(id) %>%
-  summarize(phi = mean(phi),
-            frac_agri = unique(frac_agri)) %>%
-  ggplot(aes(y = phi,
-             x = frac_agri * 100)) +
-  geom_point(size = 4) +
-  geom_line() +
-  labs(y = expression("Resilience"~~phi),
-       x = "% Agriculture") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 20),
-        axis.title = element_text(size = 25))
-
-ggsave(g_phi,
-       filename = "output/fig_phi.pdf",
-       width = 6, height = 5)
+# ## energy landscape: agriculture impact
+# 
+# v_x <- seq(0.05, 0.95, length = 10)
+# xq <- (boot::logit(v_x) - mean(boot::logit(df_site$frac_agri))) / sd(boot::logit(df_site$frac_agri))
+# 
+# cout <- foreach(u = seq_len(length(xq)), .combine = bind_rows) %do% {
+#   print(u)
+#   Xp <- c(1, 0, xq[u], 0)
+#   o <- drop(Xp %*% B)
+#   diag(sA) <- o
+#   
+#   message("calculating local energy...")
+#   h <- local_energy(N = length(sp), A = sA, ncore = 10)
+#   
+#   message("calculating local minima...")
+#   m <- local_minima(N = length(sp), h = h, ncore = 10)
+#   mu_gap <- mean(abs(h - min(h[m])))
+#   
+#   message("calculating tipping points...")
+#   dt_tip <- tipping(N = length(sp), h = h, ncore = 10)
+#   dt_tip <- dt_tip[n_to > 1,]
+#   dt_tip$gap <- dt_tip$h_ridge - dt_tip$h_minima
+#   
+#   combo <- combn(m, 2)
+#   height <- sapply(seq_len(ncol(combo)), function(v) {
+#     x <- combo[, v]
+#     dt_sub <- dt_tip[to %in% x,]
+#     ridges <- as.numeric(names(which(table(dt_sub$node) == 2)))
+#     dt_ridge <- dt_sub[node %in% ridges,]
+#     tapply(dt_ridge$gap, dt_ridge$to, min)
+#   })
+#   
+#   phi <- mean(height)
+#   
+#   list_out <- list(id = u,
+#                    mu_gap = mu_gap,
+#                    phi = phi,
+#                    n_minima = length(m),
+#                    frac_agri = v_x[u],
+#                    minima = list(c(m)),
+#                    minma_energy = list(h[m]))
+#   
+#   # message("gibbs sampling...")
+#   # trans <- gibbs(s = m,
+#   #                h = h,
+#   #                neighbor = attributes(m)$neighbor,
+#   #                attempt = 10,
+#   #                freq = 50,
+#   #                magnitude = 1000)
+#   # 
+#   # trans$z <- ifelse(trans$minima_from == trans$minima_to, 1, 0)
+#   # v_phi <- tapply(trans$z, trans$initial_state, mean)
+#   # 
+#   # list_out <- list(id = u,
+#   #                  phi = v_phi,
+#   #                  n_minima = length(m),
+#   #                  frac_agri = v_x[u],
+#   #                  minima = list(c(m)),
+#   #                  minma_energy = list(h[m]))
+#   
+#   return(list_out)
+# }
+# 
+# saveRDS(cout, "output/data_phi.rds")
+# 
+# g_phi <- cout %>%
+#   group_by(id) %>%
+#   summarize(phi = mean(phi),
+#             frac_agri = unique(frac_agri)) %>%
+#   ggplot(aes(y = phi,
+#              x = frac_agri * 100)) +
+#   geom_point(size = 4) +
+#   geom_line() +
+#   labs(y = expression("Resilience"~~phi),
+#        x = "% Agriculture") +
+#   theme_bw() +
+#   theme(axis.text = element_text(size = 20),
+#         axis.title = element_text(size = 25))
+# 
+# ggsave(g_phi,
+#        filename = "output/fig_phi.pdf",
+#        width = 6, height = 5)
 
 # subgraph ----------------------------------------------------------------
 

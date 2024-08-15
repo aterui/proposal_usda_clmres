@@ -4,3 +4,5 @@
 .Ruserdata
 old
 output/*.rds
+data_fmt
+data_raw

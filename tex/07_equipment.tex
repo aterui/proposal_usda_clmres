@@ -1,0 +1,34 @@
+\documentclass[12pt, class=article, crop=false]{standalone}
+\usepackage[subpreambles=true]{standalone}
+\usepackage[T1]{fontenc} % for font setting
+\usepackage{newtxtext,newtxmath}
+\usepackage{import,
+            graphicx,
+            parskip,
+            url,
+            amsmath,
+            wrapfig,
+            fancyhdr}
+            
+\usepackage[most]{tcolorbox}
+\usepackage[top=2.54cm, bottom=2.54cm, left=2.54cm, right=2.54cm, marginparwidth=2cm]{geometry}%set margin
+\usepackage[sort&compress]{natbib}
+\setcitestyle{square}
+\setcitestyle{comma}
+\usepackage[font={sf, small}, labelfont={bf, small}]{caption}
+
+\tcbuselibrary{breakable}
+\bibliographystyle{bibstyle}
+\graphicspath{{images/}}
+
+% header
+\pagestyle{fancy}
+\fancyhead[L]{Equipment}
+\fancyhead[R]{}
+
+\begin{document}
+\section*{Equipment}
+
+No equipment is required as this project is fully computational.
+
+\end{document}

@@ -1,0 +1,106 @@
+\documentclass[12pt, class=article, crop=false]{standalone}
+\usepackage[subpreambles=true]{standalone}
+\usepackage[T1]{fontenc} % for font setting
+\usepackage{newtxtext,newtxmath}
+\usepackage{import,
+            graphicx,
+            parskip,
+            url,
+            amsmath,
+            wrapfig,
+            fancyhdr}
+            
+\usepackage[most]{tcolorbox}
+\usepackage[top=2.54cm, bottom=2.54cm, left=2.54cm, right=2.54cm, marginparwidth=2cm]{geometry}%set margin
+\usepackage[sort&compress]{natbib}
+\setcitestyle{square}
+\setcitestyle{comma}
+\usepackage[font={sf, small}, labelfont={bf, small}]{caption}
+
+% header
+\pagestyle{fancy}
+\fancyhead[L]{Facilities \& Other Resources}
+\fancyhead[R]{}
+
+\tcbuselibrary{breakable}
+\bibliographystyle{bibstyle}
+\graphicspath{{images/}}
+
+\begin{document}
+\section*{Facilities \& Other Resources}
+
+\subsection*{University of North Carolina at Greensboro (Terui)}
+
+\textit{Laboratory facilities}: Terui has ca. 1850 square feet of laboratory space.
+This space includes work areas for lab members (students and postdocs) and general wet/dry lab (sample sorting, sample processing etc.).
+This laboratory space is entirely devoted to Terui's research and is not shared.
+
+Office \textit{facilities}: Terui's office is located close to the laboratory.
+The space is adequate and is equipped with a desktop computer, printer, phone, etc and consulting space to meet with students, colleagues, and collaborators.
+
+\textit{Computer facilities}: The desktop computers in the Terui lab are equipped with standard Microsoft programs
+(WORD, EXCEL, POWERPOINT, ACCESS).
+The software includes the latest versions of R, JAGS, ArcGIS, ArcCatalog, and QGIS.
+All databases will be managed in spreadsheets/R files and shared via online drive (OneDrive and Google Drive) to increase accessibility for team members.
+The University of North Carolina at Greensboro (UNCG) provides 3 TB online storage space in OneDrive.
+Additionally, UNCG provides the Departmental Cloud Storage (25TB).
+Data saved in this departmental cloud space is institutionally owned and will remain in the department’s storage space even when the data creators have separated from the university.
+The desktop computers in the Terui lab have 64 GB of available RAM and a high-performance processor (Core i-7 8700 CPU, 3.2 GHz) with suitable computational capacity for the proposed project.
+In addition, UNCG partners with UNC-Chapel Hill and NC State University to provide access to their Computing Clusters, technical support, and training for High Performance Computing (HPC).
+Through this partnership, Terui can access cluster computing resources.
+We will use these cluster computing resources should that be necessary for the statistical analysis.
+
+\textit{Communication}: UNCG has unlimited access to the teleconferencing software (Zoom or Teams), which will allow us to communicate frequently.
+
+\textit{Diversity}: UNCG is home to an integrative, diverse group of faculty, research scientists, and students who work together to advance basic understanding of ecosystems and solve environmental issues. The UNCG is designated as a minority-serving institution and saves a diverse student body.
+The Biology department is housed in the Eberhart and Sullivan building
+and supports active research in the fields of ecology, physiology, molecular biology, and cell biology among others.
+In 2008, the Biology department initiated the Environmental Health Sciences (EHS) Ph.D program, in addition to the Master's program.
+These programs create opportunities for Terui's lab group to interact with other cell biologists, physiologists, toxicologists, bioinformaticians, and ecologists.
+
+\textit{Library Resources}: The Jackson Library at UNCG provides over 1.2 million physical items in its collections and access to millions of digital items. The library has more than 300 computers for students, staff, and faculty. The UNCG library subscribes to most ecological journals electronically and provides access to the latest scientific articles.
+Furthermore, faculty members and graduate students can borrow books from the libraries of the University of North Carolina system and Duke University via a cooperative leading agreement.
+
+\subsection*{University of Kansas (Hansen)}
+\textit{Laboratories}: No physical laboratories will be used in the proposed work.
+
+\textit{Animal}: No animals will be used in the proposed work.
+
+\textit{Computer}: Designated computers are available for each person working on the project.
+An additional need for computing resources is anticipated for the project and will be satisfied by access to the high performance computing center (HPC) at the University of Kansas.
+Co-PD Hansen has access to the recently renovated Advanced Computing Facility (ACF) at University of Kansas.
+This access includes priority access on 10 nodes (3 of 256 GB of memory per node, 56 cores per node, 2 of 192 GB of memory per node, 40 cores per node: and 5 of 128 GB of memory per node, 24 cores per node) with additional access to 1400 general purpose cores. 
+
+\textit{Office}: Office facilities are available for the faculty and graduate research assistant anticipated for this project.
+The Civil, Environmental and Architectural Engineering Department has administrative staff members who aid in the preparation of budget reports and communications.
+Full time technical computer support technicians are available as needed through the School of Engineering.
+
+\textit{Clinical}: No clinical work is included in the proposal.
+
+\subsection*{University of Minnesota (Finlay and Dolph)}
+
+The University of Minnesota's state-of-the-art facilities include The Minnesota Supercomputing (MSI).
+The MSI provides advanced research computing infrastructure for use in data analysis and management.
+Our team has experience utilizing the MSI for data-intensive and computationally heavy modeling applications and can leverage these resources for the proposed project. 
+
+\subsection*{The Nature Conservancy (Piazza, Kennedy, Harlan)}
+
+The Nature Conservancy has robust technical and people networks in place to succeed in this project and build and maintain decision-support tools that will persist and be used long into the future.
+TNC developed and manages a Freshwater Network (https://freshwaternetwork.org) that has been in place for several years and is already used by partners and communities in multiple US states and regions, across the US Gulf of Mexico coast and throughout the Mississippi River Basin.
+The FN interactive mapping tools are built on AWS infrastructure, which contains a development server environment for posting draft data, analyses, and web mapping services and a production server environment for showcasing final data and map service products.
+A separate map server contains the application code, metadata, and other methods documentation, and a terminal server that acts as a dashboard for navigation between development and production environments.
+
+Additionally, FN uses Esri's ArcGIS API for JavaScript.
+The mapping tool framework is an ASP.NET application with apps that communicate directly with the ArcGIS for Server instances, primarily through the Representational State Transfer (REST) interface for the services, either directly or via the ArcGIS for JavaScript API wrapper.
+The tool technology is centrally located and is under an open-source license, being accessible to other program developers.
+A team of TNC system administrators maintains AWS infrastructure by performing backups, updating software, and configuring the servers to maximize performance.
+Through the NRCS CEAP-Wildlife project, TNC and the Universities of Kansas and Minnesota have already developed extensive data-transfer protocols and web services to deliver the modeling and analysis results that are used to populate and update the CEAP Wildlife app seamlessly from KU servers to TNC's servers. 
+
+Finally, all TNC decision tools (of which there are many) contain robust ``Terms of Use'' guidelines to guide the use of all data products and apps from our decision support networks, and we can also create private-facing pages with full-functionality to meet the needs of partners, stakeholders, and decision-makers.
+It is our desire to produce management tools that will persist and be used long into the future.
+The Conservancy has a robust people network that has been working to facilitate water quality improvements and resilience with partners throughout the Midwest US.
+This network includes internal staff, partners, and collaborations from US state chapters, the Mississippi River Basin Program, the Gulf of Mexico Program, and North American Agriculture programs.
+In this project, we will engage our network and partnerships, building on our work with the NRCS-CEAP project, to ensure the successful delivery of modeling and other scientific information into the decision support tool and, ultimately, to the stakeholders.
+Our goal is to use this information to develop more and larger conservation projects throughout the Midwest region.
+
+\end{document}

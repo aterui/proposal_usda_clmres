@@ -27,18 +27,17 @@
 \graphicspath{{images/}}
 
 \begin{document}
-\section*{Response to Previous Review}
-
-In light of the feedback provided last year, we have improved our proposal as follows:
+\textbf{Response to Previous Review}
 
 \textbf{Complexities and Reliability of Publicly Available Data}:
-The panel expressed concern that the input public data may introduce complexities and variations beyond the study's control, which could compromise the statistical ability to detect the true impact of conservation practices.
-We agreed and revised the proposal as follows.
+The panel expressed concern that the input public data may introduce complexities and variations beyond the study's control, which could compromise the statistical performance of our models.
+We revised the proposal as follows.
 
 Our statistical ability to detect the impact may be influenced by (a) the data accuracy/consistency and (b) the model's statistical power.
 For the data accuracy, we confirmed the reliability of the data sources.
-Although our data sources are public, geospatial layers referenced in the proposal are peer-reviewed and quality-controlled, thus providing reliable input data for our statistical models (appropriate references added).
+Geospatial layers referenced in the proposal are peer-reviewed and quality-controlled (e.g., validated through ground truth surveys), thus providing reliable input data (appropriate references added).
 In addition, we confirmed that fish survey data were collected using a standard method across states, minimizing potential sampling biases.
+We acknowledge that some data points may be inaccurate; however, we anticipate the impact of a few errors out of thousands of data points will be minimal.
 One possible exception is the data source for stream chemistry (Water Quality Portal or WQP).
 Multiple agencies populated WQP, potentially introducing data quality/consistency issues.
 To address this potential problem, we introduced a quality-control process in the analysis of stream chemistry, in which we diagnose model residuals to detect suspicious data points.
@@ -47,17 +46,23 @@ The balance between the sample size and the model's complexity determines the mo
 In our project, this issue could be important in the Markov Network analysis, whose estimates will be used to construct energy landscapes.
 In the revised proposal, we introduced a simulation approach to assess the appropriate sample size to detect the true effects of important predictors.
 Based on the simulation results, we will assess the risk of Type II error (e.g., false rejection of conservation effects).
-Previous simulation studies (Harris, 2016 Ecology 97: 3308--3314) have shown that the proposed model can detect true effects with moderate sample sizes ($\sim$ 50 samples), although the performance may vary by its complexity.
-In our dataset, the number of sites in most watersheds exceeds this threshold; thus, we anticipate that this will have a minimal impact on the interpretation of our analysis.
+Previous simulation studies (Harris, 2016 Ecology 97: 3308--3314) have shown that the proposed model can detect true effects with moderate sample sizes ($\sim$ 50 samples).
+In our dataset, the number of sites in most watersheds exceeds this threshold; thus, we anticipate that the sample size issue will have a minimal influence on our analysis.
 
 \textbf{Data Storage}:
-The panel expressed concern that our data storage may be insufficient to store the products from this project.
-We revised our data management plan to clarify that (1) we have access to a 3 TB data storage in OneDrive, which is sufficient to store all the data sources temporarily (Terui confirmed); (2) we will use external hard drives as an additional back-up; and (3) we have access to a 25 TB permanent data storage (Departmental Cloud Storage), which will retain the project data permanently.
-In addition, as indicated in the previous proposal, all research products will be archived in DOI-issuing public repositories, such as Zenodo. 
+We revised our data management plan to address the concern that our data storage may be insufficient.
+We have access to 10TB (PD Terui) and 15TB (PD Hansen) data storage at each institution, which is sufficient to store all data sources, intermediate files, and products.
+In addition, we have options to expand access to these cloud storage systems as needed.
+The institutional cloud storage systems are safeguarded by Redundant Array of Independent Disks (RAID) technology, which stores identical copies of data across multiple drives to protect against drive failures.
+In the event of accidental deletion or data loss, recovery can be facilitated through self-service snapshots.
+A snapshot is a ‘frozen,’ read-only view of a volume that allows easy access to previous versions of files and directories for up to 30 days.
 
 \textbf{Responsibilities of each PD in Data Management}:
-The panel expressed concern that our data management plan lacks details about the roles and responsibilities of the PDs.
-We clarified the role of each PD in Data Management Plan.
-While each PD will keep file copies related to their tasks, the lead institution (University of North Carolina at Greensboro) will be responsible for securing all the source files and the derived products in the Departmental Cloud Storage.
+We clarified the PD roles in data management to address the concern that our data management plan lacks details about the roles and responsibilities of the PDs.
+PD Terui (fish data analysis) and PD Hansen (water quality) will manage data related to their specific tasks, while PD Terui oversees the final data packages.
+Other PDs will maintain file copies necessary for their specific tasks, but these files will be co-manged with PD Terui and stored in the cloud storage space at the lead institution.
+
+\textbf{Citation for the Power-law Relationship}:
+We added appropriate references to address the concern that the proposal lacks citations supporting the power-law relationship between stream chemistry and discharge.
 
 \end{document}

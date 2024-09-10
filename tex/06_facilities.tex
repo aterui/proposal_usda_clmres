@@ -41,16 +41,18 @@ The space is adequate and is equipped with a desktop computer, printer, phone, e
 \textit{Computer facilities}: The desktop computers in the Terui lab are equipped with standard Microsoft programs
 (WORD, EXCEL, POWERPOINT, ACCESS).
 The software includes the latest versions of R, JAGS, ArcGIS, ArcCatalog, and QGIS.
-All databases will be managed in spreadsheets/R files and shared via online drive (OneDrive and Google Drive) to increase accessibility for team members.
-The University of North Carolina at Greensboro (UNCG) provides 3 TB online storage space in OneDrive.
-Additionally, UNCG provides the Departmental Cloud Storage (25TB).
-Data saved in this departmental cloud space is institutionally owned and will remain in the department’s storage space even when the data creators have separated from the university.
 The desktop computers in the Terui lab have 64 GB of available RAM and a high-performance processor (Core i-7 8700 CPU, 3.2 GHz) with suitable computational capacity for the proposed project.
 In addition, UNCG partners with UNC-Chapel Hill and NC State University to provide access to their Computing Clusters, technical support, and training for High Performance Computing (HPC).
 Through this partnership, Terui can access cluster computing resources.
 We will use these cluster computing resources should that be necessary for the statistical analysis.
 
-\textit{Communication}: UNCG has unlimited access to the teleconferencing software (Zoom or Teams), which will allow us to communicate frequently.
+The University of North Carolina at Greensboro (UNCG) provides the Departmental Cloud Storage (25TB), of which Terui has exclusive access to 10TB with options to expand as needed.
+These institutional cloud storage systems are safeguarded by Redundant Array of Independent Disks (RAID) technology, which stores identical copies of data across multiple drives to protect against drive failures.
+In the event of accidental deletion or data loss, recovery can be facilitated through self-service snapshots.
+A snapshot is a ‘frozen,’ read-only view of a volume that allows easy access to previous versions of files and directories for up to 30 days. 
+Data saved in this departmental cloud space is institutionally owned and will remain in the department’s storage space even when the data creators have separated from the university.
+
+\textit{Communication}: UNCG has unlimited access to the teleconferencing software (Teams), which will allow us to communicate frequently.
 
 \textit{Diversity}: UNCG is home to an integrative, diverse group of faculty, research scientists, and students who work together to advance basic understanding of ecosystems and solve environmental issues. The UNCG is designated as a minority-serving institution and saves a diverse student body.
 The Biology department is housed in the Eberhart and Sullivan building
@@ -67,40 +69,48 @@ Furthermore, faculty members and graduate students can borrow books from the lib
 \textit{Animal}: No animals will be used in the proposed work.
 
 \textit{Computer}: Designated computers are available for each person working on the project.
-An additional need for computing resources is anticipated for the project and will be satisfied by access to the high performance computing center (HPC) at the University of Kansas.
+An additional need for computing resources is anticipated for the project and will be satisfied by access to the Center for Research Computing (CRC) at the University of Kansas. 
 Co-PD Hansen has access to the recently renovated Advanced Computing Facility (ACF) at University of Kansas.
 This access includes priority access on 10 nodes (3 of 256 GB of memory per node, 56 cores per node, 2 of 192 GB of memory per node, 40 cores per node: and 5 of 128 GB of memory per node, 24 cores per node) with additional access to 1400 general purpose cores. 
 
-\textit{Office}: Office facilities are available for the faculty and graduate research assistant anticipated for this project.
+All data will be saved onto the KU Research File Storage service (ResFS).
+ResFS is built on the IBM Spectrum Scale for ESS platform, with redundant NAS heads, and redundant 100Gbps network connections to KU Lawrence Network backbone, KU’s Science DMZ, and KU Med Center Network.
+The ResFS platform can house all major research data types including sensitive data.
+Key features of ResFS include Common Internet File System (CIFS) and Network File System (NFSv4) support, a Global Name Space, GLOBUS data transfer and authentication for Windows, Linux and MacOS from KU’s Lawrence campus Microsoft Active Directory.
+ResFS is protected by a Redundant Array of Independent Disks (RAID) system that stores the same data on multiple drives to secure the data in case of drive failure.
+Data that is inadvertently deleted or otherwise lost can be recovered through self-service snapshots.
+A Snapshot is a 'frozen,' read-only view of a volume that provides easy access to previous versions of files and directories for up to 30 days.
+Hansen currently has 15 Tb of allocated storage on ResFS for this and other current projects and has budgeted for 4 Tb additional storage for this project for YR1 and YR2 of the project while data is being generated and in the “temporal phase”. 
+
+\textit{Office}: Office facilities are available for the faculty and postdoctoral researcher anticipated for this project.
 The Civil, Environmental and Architectural Engineering Department has administrative staff members who aid in the preparation of budget reports and communications.
-Full time technical computer support technicians are available as needed through the School of Engineering.
+Full-time technical computer support technicians are available as needed through the School of Engineering and the CRC.
 
 \textit{Clinical}: No clinical work is included in the proposal.
 
 \subsection*{University of Minnesota (Finlay and Dolph)}
 
-The University of Minnesota's state-of-the-art facilities include The Minnesota Supercomputing (MSI).
+The University of Minnesota’s state-of-the-art facilities includes The Minnesota Supercomputing (MSI).
 The MSI provides advanced research computing infrastructure for use in data analysis and management.
-Our team has experience utilizing the MSI for data-intensive and computationally heavy modeling applications and can leverage these resources for the proposed project. 
+Our team has experience utilizing the MSI for data-intensive and computationally heavy modelling applications, and can leverage these resources for the proposed project. 
 
 \subsection*{The Nature Conservancy (Piazza, Kennedy, Harlan)}
 
 The Nature Conservancy has robust technical and people networks in place to succeed in this project and build and maintain decision-support tools that will persist and be used long into the future.
-TNC developed and manages a Freshwater Network (https://freshwaternetwork.org) that has been in place for several years and is already used by partners and communities in multiple US states and regions, across the US Gulf of Mexico coast and throughout the Mississippi River Basin.
+TNC developed and manages a Freshwater Network (https://freshwaternetwork.org) that has been in place for several years and is already used by partners and communities in multiple US states, regions, across the US Gulf of Mexico coast and throughout the Mississippi River Basin.
 The FN interactive mapping tools are built on AWS infrastructure, which contains a development server environment for posting draft data, analyses, and web mapping services and a production server environment for showcasing final data and map service products.
-A separate map server contains the application code, metadata, and other methods documentation, and a terminal server that acts as a dashboard for navigation between development and production environments.
-
-Additionally, FN uses Esri's ArcGIS API for JavaScript.
-The mapping tool framework is an ASP.NET application with apps that communicate directly with the ArcGIS for Server instances, primarily through the Representational State Transfer (REST) interface for the services, either directly or via the ArcGIS for JavaScript API wrapper.
+A separate map server contains the application code, metadata and other methods documentation, and a terminal server that acts as a dashboard for navigation between development and production environments.
+Additionally, FN uses Esri's ArcGIS API for JavaScript. The mapping tool framework is an ASP.NET application with apps that communicate directly with the ArcGIS for Server instances, primarily through the Representational State Transfer (REST) interface for the services, either directly or via the ArcGIS for JavaScript API wrapper.
 The tool technology is centrally located and is under an open-source license, being accessible to other program developers.
 A team of TNC system administrators maintains AWS infrastructure by performing backups, updating software, and configuring the servers to maximize performance.
-Through the NRCS CEAP-Wildlife project, TNC and the Universities of Kansas and Minnesota have already developed extensive data-transfer protocols and web services to deliver the modeling and analysis results that are used to populate and update the CEAP Wildlife app seamlessly from KU servers to TNC's servers. 
+Through the NRCS CEAP-Wildlife project, TNC and the Universities of Kansas and Minnesota have already developed extensive data-transfer protocols and web services to deliver the modeling and analysis results that are used to populate and update the CEAP Wildlife app seamlessly from KU servers to TNC’s servers.
+Finally, all TNC decision tools (of which there are many) contain robust “Terms of Use” guidelines to guide use of all data products and apps from our decision support networks, and we can also create private-facing pages with full-functionality to meet the needs of partners, stakeholders, and decision makers.
 
-Finally, all TNC decision tools (of which there are many) contain robust ``Terms of Use'' guidelines to guide the use of all data products and apps from our decision support networks, and we can also create private-facing pages with full-functionality to meet the needs of partners, stakeholders, and decision-makers.
 It is our desire to produce management tools that will persist and be used long into the future.
 The Conservancy has a robust people network that has been working to facilitate water quality improvements and resilience with partners throughout the Midwest US.
-This network includes internal staff, partners, and collaborations from US state chapters, the Mississippi River Basin Program, the Gulf of Mexico Program, and North American Agriculture programs.
-In this project, we will engage our network and partnerships, building on our work with the NRCS-CEAP project, to ensure the successful delivery of modeling and other scientific information into the decision support tool and, ultimately, to the stakeholders.
-Our goal is to use this information to develop more and larger conservation projects throughout the Midwest region.
+This network includes internal staff, partners, and collaborations from US state chapters, the Mississippi River Basin Program, Gulf of Mexico Program, and North American Agriculture programs.
+In this project, we will engage our network and partnerships, building on our work with the NRCS-CEAP project, to ensure successful delivery of modeling and other scientific information into the decision support tool and, ultimately, to the stakeholders.
+Our goal is to use this information to develop more and larger conservation projects throughout the midwest region. 
+
 
 \end{document}

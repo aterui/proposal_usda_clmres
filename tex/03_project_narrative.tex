@@ -25,7 +25,7 @@
 \sidecaptionvpos{figure}{t}
 
 % caption setup
-\usepackage[font={fontenc, small}, labelfont={bf, small}]{caption}
+\usepackage[textfont={fontenc, normal}, labelfont=bf]{caption}
 
 % color box
 \usepackage[most]{tcolorbox}
@@ -58,12 +58,11 @@
 
 Freshwater ecosystems provide ecosystem services essential to humans in far greater amounts than indicated by their small contribution to global water \citep{dodds_freshwater_2017}.
 The provisioning of these ecosystem services in human-dominated landscapes is under threat due to increased climate variability, which aggravates existing impacts from human activities \citep{reid_emerging_2019}.
-Among the ecosystems vulnerable to the effects of climate change, agricultural watersheds stand out due to the intricate interplay between multiple human-induced stressors, such as excessive sediment and nutrient levels, and the amplified environmental fluctuations \citep{piggott_climate_2015, birk_impacts_2020}.
-This problem is particularly serious in the Midwestern US (Midwest).
-Intensive agriculture in this region has impaired the surface water quality of the Mississippi River basin.
+Agricultural watersheds are among the most sensitive ecosystems due to the interplay between multiple human-induced stressors, such as excessive sediment and nutrient levels, and the amplified environmental fluctuations \citep{piggott_climate_2015, birk_impacts_2020}.
+These interactions are particularly serious in the Midwestern US (Midwest), where intensive agriculture has impaired the surface water quality of the Mississippi River basin.
 Consequently, this region has witnessed a marked decline in freshwater biodiversity \citep{engstrom_historical_2009, hansen_contribution_2018, kelley_source_2000, hansen_coupling_2016, terui_quantifying_2019}.
 % Furthermore, this ecological deterioration has contributed to the formation of expansive ``dead zones'' in the Gulf of Mexico \citep{rabalais_gulf_2002}.
-Therefore, there is a need to develop an effective means to mitigate the multiple stressors in agricultural landscapes, while fostering a mechanistic understanding of how conservation efforts translate into improved resilience of ecological systems under climate change.
+There is a need to develop an effective means to mitigate the multiple stressors in agricultural landscapes, while fostering a mechanistic understanding of how conservation efforts translate into improved resilience of ecological systems under climate change.
 
 A growing number of conservation practices have demonstrated some effectiveness in mitigating the environmental impacts of agriculture.
 In particular, both in-field and edge-of-field conservation techniques, such as the implementation of \textbf{``cover crops''} and establishment of \textbf{``riparian buffer strips,''} are increasingly used in the Midwest and other regions \citep{us_department_of_agriculture_natural_resources_conservation_service_effects_2017, us_department_of_agriculture_natural_resources_conservation_service_effects_2017-1, wallander_cover_2021}.
@@ -166,7 +165,7 @@ To achieve this goal, we organize our research project into four supporting obje
 \begin{SCfigure}
 \centering
 \includegraphics[scale=0.65]{output/fig_overview.pdf}
-\caption{Project overview.
+\caption{Project overview and timeline.
 Objectives 1 -- 3 will be conducted in Year 1 -- 2.
 Objective 4 will use the products from Objectives 1 -- 3 to communicate with stakeholders in Year 3.
 Created with BioRender.com}
@@ -181,7 +180,7 @@ As such, our proposal directly aligns with Program Area 4d, Priority (a): ``\tex
 First, we will develop \textbf{quantitative tools to evaluate \textit{aquatic ecosystem services at large spatial scales} that result from the implementation of cover crops, wetlands, and riparian buffers} -- water quality improvement, hydrological stabilization (\textit{Supporting Objective 1}), and the resulting improvement of ecological resilience in aquatic systems under climate change (\textit{Supporting Objectives 2 \& 3}).
 Our modeling tools offer flexibility and can be adapted for the evaluation of other ecosystem services.
 Moreover, we will enhance accessibility by creating a user-friendly programming package in R.
-For instance, Terui has already initiated the development of the preliminary R package \url{snglmm}, which implements a geospatial model for \textit{Supporting Objective 1} (available at https://github.com/aterui/snglmm).
+For instance, Terui has already initiated the development of the preliminary R package \url{snglmm}, which implements a geospatial model for \textit{Supporting Objective 1}.
 Consequently, our proposed project will significantly enhance our capacity to address a broad spectrum of water quality and ecological concerns in agroecosystems.
 
 Second, we will expand upon an emerging multispecies modeling approach (an extension of Markov Networks) to concurrently estimate species responses to environmental changes and interspecific associations (\textit{Supporting Objective 2}).
@@ -217,7 +216,7 @@ By considering surface water quality responses to conservation practices (cover 
 \log~y_s = \nu_0 + \nu_1 \log~F_s + \xi_{h(s)} + \varepsilon_s 
 \end{equation}
 
-where $\nu_0$ and $\nu_1$ are the parameters (the intercept and slope on a log scale) characterizing the power-law relationship between stream chemistry and discharge (Equation \ref{eq:wq} is $E(y_s) = e^{\nu_0}F_s^{\nu_1}$ on an ordinary scale), and $\varepsilon_s$ is the residual error term.
+where $\nu_0$ and $\nu_1$ are the parameters (the intercept and slope on a log scale) characterizing the power-law relationship between stream chemistry and discharge \citep{wymore_revisiting_2023, pohle_framework_2021, rose_concentrationdischarge_2018} (Equation \ref{eq:wq} is $E(y_s) = e^{\nu_0}F_s^{\nu_1}$ on an ordinary scale), and $\varepsilon_s$ is the residual error term.
 In this formulation, the intercept $\nu_0$ controls stream chemistry at the unit streamflow condition ($E(y_s) = e^{\nu_0}$ when $F_s = 1$ for a given discharge unit), thus governing the average stream chemistry (i.e., the geometric mean) at a given site.
 In the meantime, the slope determines how stream chemistry scales with discharge. The parameter $\xi_{h(s)}$ is the random effect of the Hydrological Unit Code (HUC) defined by the USGS (HUC6 or HUC8; $h(s)$ is the HUC to which site $s$ belongs).
 We will include this parameter to account for sub-regional variation.
@@ -229,7 +228,7 @@ To express the context dependency, we will assume that environmental contexts (d
 \nu_{k, s} = (\nu'_k + \psi^{(k)}_{0,q(s)}) + \sum_d (\eta^{(k)}_d + \psi^{(k)}_{d,q(s)}) x_{d,s}
 \end{equation}
 
-In Equation \ref{eq:rwq}, the parameter $\nu_k'$ determines the baselines of the intercept ($k=0$) and slope ($k=1$) across sites, respectively.
+In Equation \ref{eq:rwq}, the parameter $\nu_k'$ sets the baseline values of the intercept ($k=0$) and slope ($k=1$) across sites, respectively.
 The rest of Equation \ref{eq:rwq} captures how environmental contexts ($x_{d,s}$ is the value of $d$th spatial factor at site $s$) modulate the chemistry-discharge relationship through the regression parameter $\eta^{(k)}_d$ [$(k)$ distinguishes regression parameter of $d^{\text{th}}$ factor for $\nu_0$ and $\nu_1$].
 The key environmental variables in this model are the type and extent of existing conservation practices, including cover crops (location and extent), riparian buffer strips (extent), and wetlands (type and extent).
 Other environmental covariates include but are not limited to agricultural land use (crop type and extent, tile drainage density, animal operations) and topography.
@@ -244,7 +243,7 @@ Within each subwatershed, we will evaluate environmental characteristics as foll
 
 \textit{Conservation practices}.
 \textit{Cover crops} -- We will characterize cover crops by the location and extent of cover crops, crop rotation, and any other data that is available regarding cover crop practice. 
-The spatial distribution of cover crops is available as a geospatial dataset aggregated at the HUC8 level (OpTIS), \textcolor{red}{whose estimation accuracy was validated through ground truth surveys} \citep{the_nature_conservancy_optis_2023}.
+The spatial distribution of cover crops is available as a geospatial dataset aggregated at the HUC8 level (OpTIS), whose estimation accuracy was validated through ground truth surveys \citep{the_nature_conservancy_optis_2023}.
 Since OpTIS data is aggregated at the HUC8 level, which limits the quantity and resolution of the cover crop data, we will extend the analysis to the entire Midwest to secure sufficient variation in cover crops across sites.
 \textit{Wetlands} -- We will characterize wetland type and extent from the National Wetlands Inventory (NWI) \citep{us_fish_and_wildlife_service_national_2024}.
 The classification scheme within the NWI provides wetland aerial area, shape, and vegetation type.
@@ -253,7 +252,7 @@ In our geospatial analysis, we will determine the percent vegetation cover withi
 
 \textit{Additional relevant geospatial data}.
 \textit{Land use} -- We will evaluate land use, crop extent and type, soil type, animal operations, and tile drainage density. We will use NLCD for land use, USDA's Cropscape for crop type \citep{han_cropscape_2012}, either SSURGO or STATSGO for soil type \citep{us_department_of_agriculture_soil_2024, us_department_of_agriculture_us_2024}, Manuresheds for animal operations \citep{spiegal_manuresheds_2020}, and Agtile-US for tile drainage density \citep{valayamkunnath_mapping_2020}.
-\textcolor{red}{These geospatial layers are peer-reviewed and quality-controlled, thus providing reliable input information for our statistical models.}
+Data in these geospatial layers are peer-reviewed, quality-controlled, and/or collected by consistent sampling schemes, thus providing reliable input information for our statistical models.
 \textit{Topography} -- Topography (e.g., mean and SD elevation) will be obtained from digital elevation maps.
 
 \textit{Model fitting}.
@@ -285,22 +284,23 @@ Our model leverages the observed spatiotemporal variation in discharge to explic
 
 \textbf{Expected Results and Potential Pitfalls}: We expect that (i) nutrients and sediment in the stream water will increase with increasing discharge and agricultural land use; (ii) conservation practices will decrease the average and highest concentrations of nutrients and sediment and modify the slope of the power-law relationship between stream chemistry and discharge (Equation \ref{eq:wq}); and (iii) effects of conservation practices and land use are highly season dependent.
 
+Our model might face potential challenges when striving to provide accurate estimates of stream chemistry at fish survey sites. To verify the viability of our model, Terui has developed a novel R package named ``snglmm'' using the Template Model Builder.
+The Template Model Builder framework furnishes a C++ platform that facilitates the rapid and efficient fitting of intricate statistical models.
+We fitted a simplified geospatial model (fixed effects: \% agriculture, \% wetland, and stream discharge) to monitoring data at 250 sites in the Minnesota River Basin (MRB). The model effectively captured significant impacts of land use and stream discharge on stream chemistry. Moreover, the integration of geospatial elements significantly enhanced the precision of model predictions (Figure \ref{fig:tpfit}) -- the predicted vs. observed values were aligned with the 1:1 line (broken line) that corresponds to the perfect prediction. Meanwhile, the prediction of the non-spatial model (simple regression) was far away from the 1:1 line, indicating the lack of predictive ability. As a result, we hold a high level of confidence in the reliability of our model.
+
 \begin{wrapfigure}{r}{0.45\textwidth}
     \includegraphics[scale=0.35]{output/fig_tpfit.pdf}
     \caption{Comparison of spatial and non-spatial models in the MRB (modeled variable: TP). The comparison of predicted (y-axis) and observed values (x-axis) proved the outstanding performance of the geospatial model (blue dots), surpassing that of the non-spatial model (red).}
     \label{fig:tpfit}
 \end{wrapfigure}
 
-Our model might face potential challenges when striving to provide accurate estimates of stream chemistry at fish survey sites. To verify the viability of our model, Terui has developed a novel R package named ``snglmm'' using the Template Model Builder (a development version available at \url{https://github.com/aterui/snglmm}). The Template Model Builder framework furnishes a C++ platform that facilitates the rapid and efficient fitting of intricate statistical models.
-We fitted a simplified geospatial model (fixed effects: \% agriculture, \% wetland, and stream discharge) to monitoring data at 250 sites in the Minnesota River Basin (MRB). The model effectively captured significant impacts of land use and stream discharge on stream chemistry. Moreover, the integration of geospatial elements significantly enhanced the precision of model predictions (Figure \ref{fig:tpfit}) -- the predicted vs. observed values were aligned with the 1:1 line (broken line) that corresponds to the perfect prediction. Meanwhile, the prediction of the non-spatial model (simple regression) was far away from the 1:1 line, indicating the lack of predictive ability. As a result, we hold a high level of confidence in the reliability of our model.
-
 One significant benefit of utilizing a statistical modeling approach is the ability to explicitly identify the underlying processes. In other words, we can gain insights into how conservation practices and alterations in land use impact water quality. Nevertheless, the presence of intricate, non-linear interactions can hold critical implications for ensuring accurate predictions. If we find that non-linear interactions are sufficiently large to mask the effect of conservation practice on water chemistry, we will adopt a machine-learning approach, such as a random forest model \citep{ryo_statistically_2017}, which is better suited for this type of data but does not uncover underlying process controls. 
 
-\textcolor{red}{Various agencies populate WQP, potentially introducing data accuracy/consistency issues.
+Various agencies populate WQP, potentially introducing data accuracy/consistency issues.
 To mitigate this potential problem, we will diagnose the model residuals.
 Any significant outliers (e.g., through the Grubbs test) given the environmental context at the site will undergo quality assurance checks.
 We will remove the data point(s) from the analysis if it seems an error.
-This strategy will give us the best estimate possible with the available information.}
+This strategy will give us the best estimate possible with the available information.
 
 
 \subsection{Supporting Objective 2}
@@ -312,7 +312,7 @@ We have assembled fish monitoring data across Minnesota \citep{minnesota_polluti
 This dataset contains the presence/absence of fish species at $>$ 4000 sites in the Upper Mississippi (Figure \ref{fig:fishmap}) and has been used in our previous research \citep{kim_metapopulation-level_2022, terui_emergent_2021}.
 We will further extend this dataset to include additional data from the rest of the Midwestern states (Indiana, Kansas, Michigan, Missouri, Nebraska, North Dakota, Ohio, and South Dakota), which are also available from a public database \citep{hao_presence_2022}.
 The observation period of the dataset is 1994 to 2019.
-\textcolor{red}{Fish surveys were conducted using a standard sampling method (electrofishing), thus minimizing sampling biases across states.}
+Fish surveys were conducted using a standard sampling method (electrofishing), thus minimizing sampling biases across states.
 
 \begin{wrapfigure}{r}{0.35\textwidth}
     \includegraphics[scale=0.55]{output/fig_fishmap.pdf}
@@ -417,13 +417,13 @@ Consequently, we anticipate that species with such traits stand to gain more fro
 Second, our fish dataset is heterogeneous in the sampling year and data source (e.g., state) as these data were assembled from multiple states.
 This complexity could bias parameter estimates.
 If this heterogeneity is deemed important, we will address it by extending the Markov Network to include covariates of sampling year and data source ID.
-This is just one \textit{example} of the statistical adjustments we can make.
+This is just one example of the statistical adjustments we can make.
 This modeling framework is very flexible and robust to common problems in large ecological datasets.
 
-\textcolor{red}{Lastly, the lack of conservation effects on fish species could be attributable to insufficient sample size (the number of sites).
+Lastly, the lack of conservation effects on fish species could be attributable to insufficient sample size (the number of sites).
 To address this concern, we will use simulated data generated from process models with known parameters.
 The comparison of statistical estimates and the true parameter values will allow us to assess the appropriate sample size given the number of predictors used.
-In doing so, we can assess and minimize the risk of Type II error (false rejection of conservation effects).}
+In doing so, we can assess and minimize the risk of Type II error (false rejection of conservation effects).
 
 \subsection{Supporting Objective 3}
 
@@ -554,6 +554,7 @@ Our efforts will harness the collective knowledge and efforts from diverse resea
 % By seamlessly integrating research outputs and engaging key stakeholders, we can effectively address the challenges posed by climate change and foster a sustainable and resilient future for the study region.
 
 \newpage
+\setcounter{page}{1}
 
 \fancyhead[L]{Bibliography \& References Cited}
 \renewcommand{\bibsection}{\section*{Bibliography \& References Cited}}

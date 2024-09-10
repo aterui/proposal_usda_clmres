@@ -31,7 +31,7 @@
 
 \subsubsection*{Data/Code Management}
 
-\textbf{Data}: While we do not collect data in the field, we use field observations of stream chemistry and fish community compositions available in public data repositories. Data and metadata content and format will adhere to established standards, ensuring that the data are Findable, Accessible, Interoperable, and Reproducible (FAIR), as applied to the field of hydrology by the HydroShare Data Repository.
+\textbf{Water Quality and Fish Data}: While we do not collect data in the field, we use field observations of stream chemistry and fish community compositions available in public data repositories. Data and metadata content and format will adhere to established standards, ensuring that the data are Findable, Accessible, Interoperable, and Reproducible (FAIR).
 
 Throughout the project, data will exist in three forms.
 \textit{Raw data}: This data is acquired immediately after collection from data repositories, prior to quality control and assurance checks.
@@ -41,7 +41,7 @@ It lists all raw data and flags data that did not pass quality checks, providing
 
 The original data sourced from data repositories will be saved as spreadsheet (.csv) or R files (.rds) with ``raw'' in the filename.
 Metadata from corresponding data repositories or through communications with data providers will be saved as a "README" markdown file (.md) in the same repository, allowing users to seamlessly access that information as needed.
-All data will be hosted in Github along with source codes for analysis so readers can reproduce research findings.
+\textit{Final data} will be hosted in Github along with source codes for analysis so readers can reproduce research findings.
 We will track any changes to data using Github's version control system.
 
 \textbf{Source Code}: We will develop and store our source codes for data formatting and statistical analysis in either R or Python scripts.
@@ -52,39 +52,53 @@ To ensure that our research is accessible to the wider community, we commit to s
 \textbf{Geospatial Data}: Our project heavily relies on Geospatial Information Systems (GIS). Geospatial data, which may include formats such as shapefiles, RDS (R Data Storage), or GeoTIFF, will be managed locally during the project.
 The original data sourced from data repositories will be saved with ``raw'' in the filename.
 
-\textcolor{red}{\textbf{Data Storage}:
-Our project will generate a substantial amount of digital data, and we will use a two-phase strategy to minimize the risk of data loss.
-During the data analysis phase (the temporal phase), we will store data locally.
-These temporary files will be regularly backed up to cloud storage (e.g., OneDrive) and external hard drives by each PD.
-Upon completion of the analysis (the permanent phase), all files (including source and intermediate files) will be transferred to the permanent data storage at the University of North Carolina at Greensboro (UNCG).
-UNCG provides 25TB of Departmental Cloud Storage, where the data is institutionally owned and remains within the department's storage space even after the data creators have left the university.}
+\textbf{Data Storage}:
+Our project will generate a substantial amount of digital data, for which we will employ a two-phase strategy to minimize the risk of data loss.
+During the data analysis phase (the temporal phase), data will be stored locally with regular and automated backups to institutional cloud storage solutions, such as Departmental SharePoint at the University of North Carolina Greensboro (UNCG) or Research File Storage at the University of Kansas (KU). 
+Currently, Terui (UNCG) and Hansen (KU) have access to 10TB and 15TB of institutional cloud storage space, respectively, with options to expand as needed (see \textit{Facilities \& Other Resources} for more details).
 
-\textcolor{red}{Each publication or sub-project will have its own managed data package. These data packages will be versioned, with the initial submission package labeled as v.1.0. Any changes after the initial submission will be clearly indicated by updating the version code (e.g., major changes will update the first digit, while minor changes will update the second digit), along with a separate change log that details the modifications in each version.}
+These institutional cloud storage systems are safeguarded by Redundant Array of Independent Disks (RAID) technology, which stores identical copies of data across multiple drives to protect against drive failures.
+In the event of accidental deletion or data loss, recovery can be facilitated through self-service snapshots.
+A snapshot is a ‘frozen,’ read-only view of a volume that allows easy access to previous versions of files and directories for up to 30 days. 
 
-\textcolor{red}{PD Terui is responsible for overseeing the permanent data packages stored at UNCG.
+Upon completion of the analysis (the permanent phase), we will archive the data required to reproduce research findings in Zenodo.
+Such datasets will include, but not be limited to, final water quality and/or fish data, environmental data derived from geospatial layers, and source codes for analysis.
+Zenodo, a public repository that issues DOIs (Digital Object Identifiers) (https://zenodo.org/), provides a stable and citable location for data.
+Total files size limit per record is 50GB, but higher quotas can be requested and granted on a case-by-case basis.
+It also seamlessly integrates with GitHub, facilitating easy access to linked source code.
+Additionally, Zenodo offers a version control system, enabling us to effectively manage any potential updates or modifications to published datasets as needed.
+Zenodo boasts a rich history of utilization in various other scientific domains.
+
+Each publication will have its own managed data package.
+These data packages will be versioned, with the initial submission package labeled as v.1.0. Any changes after the initial submission will be clearly indicated by updating the version code (e.g., major changes will update the first digit, while minor changes will update the second digit), along with a separate change log that details the modifications in each version.
+
+PD Terui is responsible for overseeing the permanent data packages.
 Each PD is responsible for managing the source, intermediate, and final data copies related to their specific tasks:
 \begin{itemize}
-    \item University of Kansas (Hansen) -- data for Objective 1
-    \item UNCG (Terui) -- data for Objectives 2 and 3
-    \item University of Minnesota (Dolph, Finlay) -- original fish data
-    \item The Nature Conservancy (Kennedy, Harlan, Piazza) -- products used for online tools
-\end{itemize}}
+    \item University of Kansas (Hansen) -- 
+    Data for and products from Objective 1.
+    Hansen will use KU storage resources for data management as described above.
+    \item UNCG (Terui) -- 
+    Data for and products from Objectives 2 and 3.
+    Terui will use UNCG storage resources for data management as described above.
+    \item University of Minnesota (Dolph, Finlay) -- 
+    Original fish data.
+    Data is shared and co-managed with Terui.
+    Terui will use UNCG storage resources for data management as described above.
+    \item The Nature Conservancy (Kennedy, Harlan, Piazza) -- 
+    Products used for online tools.
+    Source products are shared and co-managed with Terui.
+    Terui will use UNCG storage resources for data management as described above.
+\end{itemize}
 
 \subsubsection*{Policy for Product Access and Sharing}
 
-\textbf{Repositories}: All project products will be publicly accessible through either Zenodo or HydroShare.
+\textbf{Repositories}: All project products will be publicly accessible through Zenodo, as indicated above.
 
-Zenodo, a public repository that issues DOIs (Digital Object Identifiers) (https://zenodo.org/), provides a stable and citable location for data.
-It also seamlessly integrates with GitHub, facilitating easy access to linked source code.
-Additionally, Zenodo offers a version control system, enabling us to effectively manage any potential updates or modifications to published datasets as needed. Zenodo boasts a rich history of utilization in ecology and various other scientific domains.
-
-HydroShare, maintained by the Consortium of Universities for the Advancement of Hydrologic Science, Inc. (CUAHSI), serves as a web-based hydrologic information system. CUAHSI, representing over 130 U.S. universities and international water-science-related organizations and sponsored by the National Science Foundation, supports the advancement of hydrologic science and education in the United States. HydroShare's mission is to provide a citable, shareable, and discoverable repository for the hydrology field's data and research products.
-
-\textbf{Publication and Timing}: We will share our data and source codes following the publication of major findings from our project or, at the latest, within two years after the project's completion, whichever comes first.
+\textbf{Publication and Timing}: We will share our data and source codes following the publication of major findings from our project or, at the latest, within three years after the project's completion, whichever comes first.
 This timeline ensures that our work remains accessible to the public and can benefit the research community promptly.
-
-We acknowledge that most of the datasets we will utilize are publicly available. However, for any data that is state-owned and cannot be shared with the public, we will adhere to ethical and legal guidelines. We will provide references to the appropriate contacts, data archives, or publications that can guide readers on how to access or request the restricted data.
-
-By adhering to these data management and sharing practices, our project aims to promote transparency, reproducibility, and open access to our computational resources and geospatial data. This approach ensures that our research can be leveraged by the broader scientific community and facilitates the validation and extension of our findings.
+We acknowledge that most of the datasets we will utilize are publicly available.
+However, for any data that is state-owned and cannot be shared with the public, we will adhere to ethical and legal guidelines. We will provide references to the appropriate contacts, data archives, or publications that can guide readers on how to access or request the restricted data.
+By adhering to these data management and sharing practices, our project aims to promote transparency, reproducibility, and open access to our computational resources and geospatial data.
 
 \end{document}

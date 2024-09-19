@@ -13,4 +13,5 @@ pacman::p_load(sf,
                ggraph,
                foreach,
                glmnet,
-               data.table)
+               data.table,
+               scholar)
